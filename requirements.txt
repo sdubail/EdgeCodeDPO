@@ -1,0 +1,19 @@
+pydantic_settings
+
+# OpenAI API client
+openai>=1.0.0
+
+# HuggingFace Datasets
+datasets>=2.14.0
+
+# Async support
+aiohttp>=3.8.0
+
+# File operations
+pathlib
+
+# Optional: Progress tracking for long-running operations
+tqdm>=4.65.0
+
+# Optional: Formatting and data handling
+pandas>=2.0.0

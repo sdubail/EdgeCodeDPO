@@ -1,0 +1,340 @@
+# === DATA PROCESSING ===
+data processing:
+  tasks:
+    - Clean a DataFrame by replacing missing values and removing duplicates
+    - Aggregate data by group and calculate statistics
+    - Merge multiple DataFrames on common keys
+    - Pivot a data table for analysis
+    - Convert and normalize heterogeneous data types
+  libraries:
+    - pandas
+    - numpy
+    - dask
+    - polars
+    - pyjanitor
+  code_forms:
+    - utility function
+    - cleaning pipeline class
+    - aggregation generator
+    - validation decorator
+    - function with callbacks
+
+# === TEXT PROCESSING ===
+text processing:
+  tasks:
+    - Extract named entities from text
+    - Calculate similarity between two documents
+    - Classify texts according to sentiment
+    - Generate automatic text summary
+    - Normalize and lemmatize a text corpus
+  libraries:
+    - nltk
+    - spacy
+    - transformers
+    - gensim
+    - regex
+    - textblob
+  code_forms:
+    - batch processing function
+    - NLP pipeline class
+    - preprocessing decorator
+    - vector transformation function
+    - lexical analysis class
+
+# === WEB DEVELOPMENT ===
+web development:
+  tasks:
+    - Create an API endpoint that validates and processes JSON data
+    - Implement an authentication middleware
+    - Create a caching system for frequent requests
+    - Validate request parameters with schemas
+    - Manage secure user sessions
+  libraries:
+    - flask
+    - fastapi
+    - django
+    - requests
+    - httpx
+    - starlette
+    - pydantic
+    - jwt
+  code_forms:
+    - route decorator
+    - middleware class
+    - validation function
+    - API endpoint with documentation
+    - cache manager class
+
+# === DATABASE ===
+database:
+  tasks:
+    - Execute a complex SQL query with joins
+    - Implement an ORM model with relationships
+    - Create a schema migration function
+    - Optimize queries with indexing
+    - Set up a query caching system
+  libraries:
+    - sqlalchemy
+    - psycopg2
+    - pymongo
+    - redis
+    - peewee
+    - alembic
+    - mongodb
+  code_forms:
+    - ORM model class
+    - query execution function
+    - transaction decorator
+    - dynamic query generator
+    - pooled connection class
+
+# === MATHEMATICS AND SCIENTIFIC COMPUTING ===
+mathematics and scientific computing:
+  tasks:
+    - Solve a system of differential equations
+    - Calculate descriptive statistics on a dataset
+    - Implement a numerical optimization method
+    - Apply matrix transformations
+    - Perform parametric and non-parametric statistical tests
+  libraries:
+    - numpy
+    - scipy
+    - sympy
+    - statsmodels
+    - matplotlib
+    - mpmath
+    - sklearn
+  code_forms:
+    - numerical solution function
+    - adaptive integration class
+    - approximation generator
+    - vector analysis function
+    - statistical testing class
+
+# === IMAGE PROCESSING ===
+image processing:
+  tasks:
+    - Apply filters and transformations to an image
+    - Detect and segment objects in an image
+    - Extract features from a series of images
+    - Automatically correct image defects
+    - Batch resize and crop images
+  libraries:
+    - pillow
+    - opencv-python
+    - scikit-image
+    - imageio
+    - pytesseract
+    - torchvision
+  code_forms:
+    - batch processing function
+    - filtering pipeline class
+    - transformation generator
+    - preprocessing decorator
+    - object recognition class
+
+# === CLASSIC ALGORITHMS ===
+classic algorithms:
+  tasks:
+    - Implement a custom sorting algorithm
+    - Create an optimized data structure
+    - Solve a combinatorial optimization problem
+    - Traverse and manipulate a graph
+    - Implement an advanced search algorithm
+  libraries:
+    - collections
+    - heapq
+    - bisect
+    - sortedcontainers
+    - networkx
+    - itertools
+  code_forms:
+    - recursive function
+    - data structure class
+    - traversal generator
+    - parameterizable algorithm class
+    - memoization decorator
+
+# === MACHINE LEARNING ===
+machine learning:
+  tasks:
+    - Preprocess and transform features for a model
+    - Train and evaluate a classification model
+    - Optimize a model's hyperparameters
+    - Create a complete training pipeline
+    - Interpret and visualize model results
+  libraries:
+    - scikit-learn
+    - tensorflow
+    - pytorch
+    - xgboost
+    - lightgbm
+    - keras
+    - optuna
+  code_forms:
+    - custom model class
+    - evaluation function
+    - transformation pipeline
+    - incremental training class
+    - cross-validation decorator
+
+# === AUTOMATION AND SYSTEM ===
+automation and system:
+  tasks:
+    - Monitor and manage system processes
+    - Automate batch file tasks
+    - Create a logging and monitoring system
+    - Implement inter-process communication
+    - Manage scheduled asynchronous tasks
+  libraries:
+    - subprocess
+    - pathlib
+    - watchdog
+    - fabric
+    - psutil
+    - schedule
+    - asyncio
+  code_forms:
+    - process management function
+    - monitoring class
+    - retry decorator
+    - event generator
+    - context manager
+
+# === DEVOPS AND CI/CD ===
+devops and CI/CD:
+  tasks:
+    - Automate application deployment
+    - Configure and validate environments
+    - Create automated integration tests
+    - Manage container configurations
+    - Monitor application metrics
+  libraries:
+    - docker
+    - pytest
+    - ansible
+    - fabric
+    - prometheus-client
+    - jenkins
+    - kubernetes
+  code_forms:
+    - deployment class
+    - configuration function
+    - test decorator
+    - report generator
+    - CI/CD script
+
+# === WEB SCRAPING AND DATA COLLECTION ===
+web scraping:
+  tasks:
+    - Extract structured data from a web page
+    - Navigate and interact with a dynamic website
+    - Collect data from a REST API
+    - Handle errors and rate limits
+    - Schedule periodic data collections
+  libraries:
+    - beautifulsoup4
+    - scrapy
+    - selenium
+    - requests
+    - playwright
+    - httpx
+    - aiohttp
+  code_forms:
+    - scraper class
+    - extraction pipeline
+    - navigation function
+    - rate limiting middleware
+    - asynchronous spider
+
+# === FINANCE AND ECONOMICS ===
+finance and economics:
+  tasks:
+    - Calculate financial indicators from time series
+    - Simulate market scenarios with Monte Carlo
+    - Optimize an investment portfolio
+    - Analyze and predict price trends
+    - Calculate financial risk measures
+  libraries:
+    - pandas
+    - numpy
+    - scipy
+    - statsmodels
+    - pyfolio
+    - quantlib-python
+    - yfinance
+  code_forms:
+    - financial analysis class
+    - technical indicator function
+    - simulation generator
+    - backtesting pipeline
+    - pricing model class
+
+# === GAMES AND SIMULATION ===
+games and simulation:
+  tasks:
+    - Implement a simple game engine
+    - Create an AI for a strategy game
+    - Generate procedural content
+    - Simulate a physical system
+    - Manage game states and transitions
+  libraries:
+    - pygame
+    - numpy
+    - pymunk
+    - gymnasium
+    - pettingzoo
+    - noise
+    - networkx
+  code_forms:
+    - game component class
+    - decision-making AI function
+    - content generator
+    - finite state system
+    - physical simulation class
+
+# === API AND SERVICE INTEGRATION ===
+api and integration:
+  tasks:
+    - Consume a REST API with authentication
+    - Create a client for asynchronous web service
+    - Implement an API wrapper with rate limiting
+    - Handle errors and retries in API calls
+    - Integrate multiple services in a workflow
+  libraries:
+    - requests
+    - httpx
+    - aiohttp
+    - pydantic
+    - tenacity
+    - backoff
+    - marshmallow
+  code_forms:
+    - API client class
+    - retry decorator
+    - serialization function
+    - authentication middleware
+    - session manager
+
+# === IOT AND EMBEDDED SYSTEMS ===
+iot and embedded systems:
+  tasks:
+    - Collect and process sensor data
+    - Communicate with devices via protocols
+    - Implement an automated control system
+    - Filter and aggregate real-time data
+    - Manage device events and alerts
+  libraries:
+    - paho-mqtt
+    - pyserial
+    - gpiozero
+    - adafruit-io
+    - influxdb
+    - pika
+    - bleak
+  code_forms:
+    - device connection class
+    - asynchronous event loop
+    - signal filtering function
+    - event generator
+    - controller class
