@@ -243,46 +243,38 @@ async def generate_dataset(
         sampled_combinations = combinations
 
     # Initialize the OpenAI client
-    import pdb
-
-    pdb.set_trace()
     client = OpenAIAsyncClient(model=openai_model, api_key=settings.OPENAI_KEY)
 
-    try:
-        # Process all combinations
-        results = await process_batch(
-            client=client,
-            combinations=sampled_combinations,
-            batch_size=batch_size,
-            system_message=system_message,
-        )
+    # Process all combinations
+    results = await process_batch(
+        client=client,
+        combinations=sampled_combinations,
+        batch_size=batch_size,
+        system_message=system_message,
+    )
 
-        # Save intermediate results if requested
-        if save_intermediate:
-            intermediate_path = os.path.join(output_path, "intermediate_results.json")
-            os.makedirs(output_path, exist_ok=True)
-            with open(intermediate_path, "w", encoding="utf-8") as f:
-                json.dump(results, f, indent=2)
-            print(f"Saved intermediate results to {intermediate_path}")
+    # Save intermediate results if requested
+    if save_intermediate:
+        intermediate_path = os.path.join(output_path, "intermediate_results.json")
+        os.makedirs(output_path, exist_ok=True)
+        with open(intermediate_path, "w", encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+        print(f"Saved intermediate results to {intermediate_path}")
 
-        # Convert to dataset format
-        dataset_dict = convert_to_dataset_format(results)
+    # Convert to dataset format
+    dataset_dict = convert_to_dataset_format(results)
 
-        # Create and save the HuggingFace dataset
-        dataset = Dataset.from_dict(
-            {"rejected": dataset_dict["rejected"], "chosen": dataset_dict["chosen"]}
-        )
+    # Create and save the HuggingFace dataset
+    dataset = Dataset.from_dict(
+        {"rejected": dataset_dict["rejected"], "chosen": dataset_dict["chosen"]}
+    )
 
-        # Save the dataset
-        dataset_path = os.path.join(output_path, "dataset")
-        dataset.save_to_disk(dataset_path)
-        print(f"Saved HuggingFace dataset to {dataset_path}")
+    # Save the dataset
+    dataset_path = os.path.join(output_path, "dataset")
+    dataset.save_to_disk(dataset_path)
+    print(f"Saved HuggingFace dataset to {dataset_path}")
 
-        # Print some statistics
-        print("Dataset statistics:")
-        print(f"  - Rejected examples: {len(dataset_dict['rejected'])}")
-        print(f"  - Chosen examples: {len(dataset_dict['chosen'])}")
-
-    finally:
-        # Clean up the client
-        await client.close()
+    # Print some statistics
+    print("Dataset statistics:")
+    print(f"  - Rejected examples: {len(dataset_dict['rejected'])}")
+    print(f"  - Chosen examples: {len(dataset_dict['chosen'])}")

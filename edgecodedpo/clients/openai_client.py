@@ -191,22 +191,18 @@ async def main() -> None:
         "Write a Python function to sort a list using quicksort.",
     ]
 
-    try:
-        responses = await client.process_batch(
-            prompts=prompts,
-            system_message="You are a helpful assistant that provides Python code examples.",
-            json_mode=False,
-        )
+    responses = await client.process_batch(
+        prompts=prompts,
+        system_message="You are a helpful assistant that provides Python code examples.",
+        json_mode=False,
+    )
 
-        for i, response in enumerate(responses):
-            if "error" in response:
-                print(f"Prompt {i} failed: {response['error']}")
-            else:
-                message_content = response["choices"][0]["message"]["content"]
-                print(f"Prompt {i} response:\n{message_content}\n")
-
-    finally:
-        await client.close()
+    for i, response in enumerate(responses):
+        if "error" in response:
+            print(f"Prompt {i} failed: {response['error']}")
+        else:
+            message_content = response["choices"][0]["message"]["content"]
+            print(f"Prompt {i} response:\n{message_content}\n")
 
 
 if __name__ == "__main__":
