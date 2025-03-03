@@ -1,0 +1,142 @@
+[project]
+name = "edgecodedpo"
+description = ""
+authors = [{ name = "Simon", email = "dubailsimon@gmail.com" }]
+readme = "README.md"
+classifiers = [
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3", 
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development",
+]
+requires-python = ">=3.12"
+dynamic = ["version"]
+
+scripts = { edgecodedpo = "edgecodedpo:__main__.app" }
+
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "typer",
+    "tqdm",
+    "pandas",
+    "pydantic_settings",
+    "openai>=1.0.0",
+    "datasets>=2.14.0",
+    "aiohttp>=3.8.0",
+    "pathlib",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff==0.5.*",
+  "mypy==1.11.*",
+  "pytest"
+]
+doc = [
+]
+
+all = ["edgecodedpo[dev]", "edgecodedpo[doc]"]
+
+[tool.ruff]
+target-version = "py310"
+unsafe-fixes = true
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "UP",   # pyupgrade
+  "I",    # isort
+  "PERF", # Perflint
+  "S",    # flake8-bandit
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "DTZ",  # flake8-datetimez
+  "TID",  # flake8-tidy-imports
+  "ICN",  # flake8-import-conventions
+  # "TCH",  # flake8-type-checking
+  "RUF", # Ruff-specific rules
+]
+
+ignore = [
+  "E501",   # pycodestyle line too long
+  "B010",   # flake8-bugbear - do not call setattr with a constant attribute value
+  "RUF012", # Ruff-specific rule - annotated with classvar
+  "ISC001", # Ruff formatter incompatible
+  "S608",   # flake8-bandit - Possible SQL injection vector through string-based query construction
+  "B008",   # flake8-bugbear - contradict FastAPI
+]
+
+[tool.ruff.lint.flake8-import-conventions.aliases]
+numpy = "np"
+pandas = "pd"
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"                 # Disallow all relative imports.
+banned-module-level-imports = ["matplotlib"] # require a lazy import
+
+[tool.ruff.lint.isort]
+known-first-party = ["edgecodedpo", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.*" = [
+  "A",
+  "ARG",
+  "B",
+  "BLE",
+  "C901",
+  "D",
+  "DTZ",
+  "EM",
+  "FBT",
+  "G",
+  "N",
+  "PGH",
+  "PIE",
+  "PLR",
+  "PLW",
+  "PTH",
+  "RSE",
+  "S",
+  "S101",
+  "SIM",
+  # "TCH",
+  "TRY",
+]
+
+[tool.mypy]
+# plugins = ["pydantic.mypy"]
+python_version = "3.12" 
+
+# Rules can be found at:
+# https://mypy.readthedocs.io/en/latest/config_file.html
+
+strict = true
+warn_return_any = false
+show_error_codes = true
+
+# permissives rules:
+implicit_reexport = true      # no need to specify __all__ in modules
+ignore_missing_imports = true # ignore missing stubs
+# follow_imports = "silent"  # does not work when using dmypy https://github.com/python/mypy/issues/9475
+
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "docs.*"]
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# [tool.pyright]
+
+[tool.cruft]
+skip = ["edgecodedpo/__init__.py", "tests", "playground"]
