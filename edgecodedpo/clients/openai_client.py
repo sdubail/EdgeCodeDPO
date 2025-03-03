@@ -45,7 +45,7 @@ class OpenAIAsyncClient:
             max_retries=self.max_retries,
         )
 
-    async def _wait_for_rate_limit(self):
+    async def _wait_for_rate_limit(self) -> None:
         """Wait to respect rate limits."""
         now = time.time()
         time_since_last_request = now - self.last_request_time
@@ -99,9 +99,9 @@ class OpenAIAsyncClient:
         await self._wait_for_rate_limit()
 
         # Prepare the messages in the format expected by the API
-        api_messages: list[ChatCompletionMessageParam] = []
-        for msg in messages:
-            api_messages.append({"role": msg["role"], "content": msg["content"]})
+        api_messages: list[ChatCompletionMessageParam] = [
+            {"role": msg["role"], "content": msg["content"]} for msg in messages
+        ]
 
         # Set up response format for JSON mode
         api_response_format = None
@@ -127,7 +127,7 @@ class OpenAIAsyncClient:
                 response_format=api_response_format,
                 tools=tools,
                 tool_choice=tool_choice,
-            )
+            )  # type:ignore
 
             # Convert the response to a dictionary
             response_dict = completion.model_dump()
@@ -160,7 +160,7 @@ class OpenAIAsyncClient:
         results = [None] * len(prompts)
         semaphore = asyncio.Semaphore(batch_size)
 
-        async def process_prompt(idx, prompt):
+        async def process_prompt(idx, prompt) -> None:
             async with semaphore:
                 messages = []
                 if system_message:
@@ -180,13 +180,8 @@ class OpenAIAsyncClient:
 
         return results
 
-    async def close(self):
-        """Close any resources."""
-        # The OpenAI AsyncClient handles its own cleanup
-        pass
 
-
-async def main():
+async def main() -> None:
     """Example usage of the client."""
     client = OpenAIAsyncClient()
 

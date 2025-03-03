@@ -1,14 +1,14 @@
-import argparse
 import asyncio
 import json
 import os
 from typing import Any
 
 import yaml
-from clients.openai_client import OpenAIAsyncClient
-from configs.config import settings
 from datasets import Dataset
-from prompt_generator import (
+
+from edgecodedpo.clients.openai_client import OpenAIAsyncClient
+from edgecodedpo.config import settings
+from edgecodedpo.data.prompt_generator import (
     create_first_stage_prompt,
     create_second_stage_prompt,
     format_conversation_pair,
@@ -243,6 +243,9 @@ async def generate_dataset(
         sampled_combinations = combinations
 
     # Initialize the OpenAI client
+    import pdb
+
+    pdb.set_trace()
     client = OpenAIAsyncClient(model=openai_model, api_key=settings.OPENAI_KEY)
 
     try:
