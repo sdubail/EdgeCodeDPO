@@ -20,6 +20,7 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 - **Configuration-based**: Domains, tasks, libraries, and code forms are defined in YAML config files
 - **Asynchronous Processing**: Efficiently processes multiple API requests concurrently
 - **HuggingFace Dataset Integration**: Outputs are saved in HuggingFace dataset format
+- **Typer CLI Interface**: Easy-to-use command-line interface for all operations
 
 ## Installation
 
@@ -28,54 +29,82 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 git clone https://github.com/your-username/EdgeCodeDPO.git
 cd EdgeCodeDPO
 
-# Install dependencies
-pip install -r requirements.txt
+# Development installation with all dependencies
+pip install -e ".[all]"
+
+# Or minimal installation 
+pip install -e .
 
 # Set up your OpenAI API key
 export OPENAI_API_KEY="your-api-key-here"
 ```
 
+Alternatively, you can create a `.env` file in the `edgecodedpo` directory with:
+
+```
+OPENAI_KEY=your-api-key-here
+```
+
 ## Usage
+
+### CLI Commands
+
+EdgeCodeDPO provides a command-line interface with the following commands:
+
+```bash
+# Show available commands
+edgecodedpo --help
+
+# Generate a dataset
+edgecodedpo generate --config edgecodedpo/configs/dataset.yaml --output data/gen_data
+
+# Check version
+edgecodedpo version
+```
 
 ### Generating a Dataset
 
 ```bash
-python data/dataset_generator.py --config configs/dataset.yaml --output data/gen_data --samples 10 --model gpt-4o-mini
+edgecodedpo generate --config edgecodedpo/configs/dataset.yaml --output data/gen_data --samples 10 --model gpt-4o-mini
 ```
 
 #### Parameters
 
-- `--config`: Path to the configuration file (default: `configs/dataset.yaml`)
-- `--output`: Path to save the generated dataset (default: `data/gen_data`)
-- `--samples`: Number of combinations to sample (default: all combinations)
-- `--batch-size`: Number of concurrent API requests (default: 5)
-- `--model`: OpenAI model to use (default: `gpt-4o-mini`)
+- `--config`, `-c`: Path to the configuration file (default: `edgecodedpo/configs/dataset.yaml`)
+- `--output`, `-o`: Path to save the generated dataset (default: `edgecodedpo/data/gen_data`)
+- `--samples`, `-s`: Number of combinations to sample (default: all combinations)
+- `--batch-size`, `-b`: Number of concurrent API requests (default: 5)
+- `--model`, `-m`: OpenAI model to use (default: `gpt-4o-mini`)
 - `--system-message`: Optional system message for the API
 - `--no-intermediate`: Don't save intermediate results
 
 ### Configuration File
 
-The `configs/dataset.yaml` file defines the domains, tasks, libraries, and code forms used for dataset generation. You can customize this file to generate examples for specific domains or tasks.
+The `edgecodedpo/configs/dataset.yaml` file defines the domains, tasks, libraries, and code forms used for dataset generation. You can customize this file to generate examples for specific domains or tasks.
 
 ## Project Structure
 
 ```
 EdgeCodeDPO/
-├── clients/
-│   └── openai_client.py       # Async client for OpenAI API
-├── configs/
-│   └── dataset.yaml           # Configuration for dataset generation
-├── data/
-│   ├── dataset_generator.py   # Main dataset generation script
-│   └── prompt_generator.py    # Prompt creation utilities
-├── config.py                  # Project configuration
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+├── edgecodedpo/
+│   ├── __main__.py          # CLI entry point
+│   ├── config.py            # Project configuration
+│   ├── clients/
+│   │   └── openai_client.py # Async client for OpenAI API
+│   ├── configs/
+│   │   └── dataset.yaml     # Configuration for dataset generation
+│   └── data/
+│       ├── dataset_generator.py  # Main dataset generation script
+│       └── prompt_generator.py   # Prompt creation utilities
+├── pyproject.toml           # Package configuration
+├── requirements.txt         # Python dependencies
+└── README.md                # This file
 ```
 
 ## Roadmap
 
 - [x] Initial dataset generation pipeline
+- [x] CLI interface implementation
 - [ ] Data quality evaluation and filtering
 - [ ] Direct Preference Optimization (DPO) training
 - [ ] Model evaluation framework
@@ -85,12 +114,16 @@ EdgeCodeDPO/
 
 ## Dependencies
 
+Main dependencies:
 - OpenAI API (>= 1.0.0)
 - HuggingFace Datasets (>= 2.14.0)
+- Typer (for CLI)
 - Pandas (>= 2.0.0)
 - PyYAML
 - Pydantic Settings
 - AsyncIO and AIOHTTP
+
+Development dependencies are available through the `[dev]` extra.
 
 ## Contributing
 
