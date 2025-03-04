@@ -3,3 +3,4 @@
 **/__pycache__
 .vscode
 edgecodedpo.egg-info
+**/.DS_Store
