@@ -7,23 +7,36 @@ import yaml
 
 
 def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
-    """Generates all valid combinations of domain, task, libraries, and code form."""
+    """
+    Generates valid combinations of domain, task, libraries, and code form based on the
+    restructured config where each task has its own allowed code forms.
+
+    Args:
+        config: The configuration dictionary with domains, tasks, libraries, and code forms
+
+    Returns:
+        List of dictionaries, each containing a valid combination
+    """
     combinations = []
 
     for domain, domain_data in config.items():
-        tasks = domain_data.get("tasks", [])
         libraries = domain_data.get("libraries", [])
-        code_forms = domain_data.get("code_forms", [])
+        tasks = domain_data.get("tasks", [])
 
-        for task, code_form in itertools.product(tasks, code_forms):
-            combinations.append(
-                {
-                    "domain": domain,
-                    "task": task,
-                    "libraries": libraries,
-                    "code_form": code_form,
-                }
-            )
+        for task_entry in tasks:
+            # In the new structure, each task is a dictionary with 'name' and 'code_forms'
+            task_name = task_entry.get("name", "")
+            code_forms = task_entry.get("code_forms", [])
+
+            for code_form in code_forms:
+                combinations.append(  # noqa: PERF401 - should be a comprehension list but let's keep it simple
+                    {
+                        "domain": domain,
+                        "task": task_name,
+                        "libraries": libraries,
+                        "code_form": code_form,
+                    }
+                )
 
     return combinations
 
