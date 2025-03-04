@@ -6,6 +6,10 @@ data processing:
     - Merge multiple DataFrames on common keys
     - Pivot a data table for analysis
     - Convert and normalize heterogeneous data types
+    - Detect and handle seasonality in time series data
+    - Convert between JSON and CSV formats with custom mappings
+    - Sample data while maintaining statistical properties
+    - Infer column types for unknown datasets
   libraries:
     - pandas
     - numpy
@@ -27,6 +31,10 @@ text processing:
     - Classify texts according to sentiment
     - Generate automatic text summary
     - Normalize and lemmatize a text corpus
+    - Process technical or domain-specific text with custom tokenization  
+    - Extract dates and time expressions from natural language
+    - Compare and highlight differences between two text documents
+    - Generate and analyze n-grams from text input
   libraries:
     - nltk
     - spacy
@@ -49,6 +57,10 @@ web development:
     - Create a caching system for frequent requests
     - Validate request parameters with schemas
     - Manage secure user sessions
+    - Throttle requests to API endpoints based on configurable rules
+    - Handle CORS with configurable allowed origins
+    - Create a URL shortening system with custom slug support
+    - Validate form submissions with custom error messages
   libraries:
     - flask
     - fastapi
@@ -73,6 +85,10 @@ database:
     - Create a schema migration function
     - Optimize queries with indexing
     - Set up a query caching system
+    - Generate database fixtures from existing data samples
+    - Log and analyze query performance metrics
+    - Track data changes with an audit trail mechanism
+    - Manage database schema updates safely
   libraries:
     - sqlalchemy
     - psycopg2
@@ -96,6 +112,10 @@ mathematics and scientific computing:
     - Implement a numerical optimization method
     - Apply matrix transformations
     - Perform parametric and non-parametric statistical tests
+    - Perform polynomial regression with error bounds calculation
+    - Generate random numbers with specific distribution properties
+    - Apply signal processing filters for noise reduction
+    - Determine statistical significance between two datasets
   libraries:
     - numpy
     - scipy
@@ -119,6 +139,10 @@ image processing:
     - Extract features from a series of images
     - Automatically correct image defects
     - Batch resize and crop images
+    - Detect and extract text content from images
+    - Hide and retrieve data within images using steganography
+    - Extract dominant color palettes from images
+    - Generate thumbnails with intelligent cropping
   libraries:
     - pillow
     - opencv-python
@@ -141,6 +165,10 @@ classic algorithms:
     - Solve a combinatorial optimization problem
     - Traverse and manipulate a graph
     - Implement an advanced search algorithm
+    - Match strings using prefix-based indexing
+    - Store and retrieve data in a circular buffer
+    - Cache data with size limitations and expiration policies
+    - Solve resource allocation with constraints
   libraries:
     - collections
     - heapq
@@ -163,6 +191,10 @@ machine learning:
     - Optimize a model's hyperparameters
     - Create a complete training pipeline
     - Interpret and visualize model results
+    - Detect outliers using multiple statistical methods
+    - Select features based on relevance and correlation metrics
+    - Evaluate models with cross-validation techniques
+    - Balance skewed datasets for training
   libraries:
     - scikit-learn
     - tensorflow
@@ -186,6 +218,10 @@ automation and system:
     - Create a logging and monitoring system
     - Implement inter-process communication
     - Manage scheduled asynchronous tasks
+    - Respond to file system changes with custom actions
+    - Manage temporary files with reliable cleanup
+    - Schedule and prioritize background jobs
+    - Pool and allocate limited resources
   libraries:
     - subprocess
     - pathlib
@@ -209,6 +245,10 @@ devops and CI/CD:
     - Create automated integration tests
     - Manage container configurations
     - Monitor application metrics
+    - Validate configuration consistency across environments
+    - Check service health with customizable criteria
+    - Analyze code dependencies and relationships
+    - Parse and extract insights from log files
   libraries:
     - docker
     - pytest
@@ -232,6 +272,10 @@ web scraping:
     - Collect data from a REST API
     - Handle errors and rate limits
     - Schedule periodic data collections
+    - Extract structured data from HTML tables
+    - Map website structure by following links
+    - Compare product information across multiple sites
+    - Manage cookies and sessions for authenticated access
   libraries:
     - beautifulsoup4
     - scrapy
@@ -255,6 +299,10 @@ finance and economics:
     - Optimize an investment portfolio
     - Analyze and predict price trends
     - Calculate financial risk measures
+    - Calculate investment returns with various strategies
+    - Compute taxes for different income categories
+    - Identify price differences across related markets
+    - Generate loan payment schedules with variables
   libraries:
     - pandas
     - numpy
@@ -278,6 +326,10 @@ games and simulation:
     - Generate procedural content
     - Simulate a physical system
     - Manage game states and transitions
+    - Detect collisions between game objects
+    - Generate random game environments with parameters
+    - Implement a turn-based combat system
+    - Navigate characters through environments
   libraries:
     - pygame
     - numpy
@@ -301,6 +353,10 @@ api and integration:
     - Implement an API wrapper with rate limiting
     - Handle errors and retries in API calls
     - Integrate multiple services in a workflow
+    - Handle paginated API responses seamlessly
+    - Process and validate incoming webhooks
+    - Manage API request rates and limits
+    - Synchronize data between disparate systems
   libraries:
     - requests
     - httpx
@@ -324,6 +380,10 @@ iot and embedded systems:
     - Implement an automated control system
     - Filter and aggregate real-time data
     - Manage device events and alerts
+    - Process and filter real-time sensor readings
+    - Convert between IoT communication protocols
+    - Optimize data transmission frequency
+    - Detect unusual patterns in device data
   libraries:
     - paho-mqtt
     - pyserial
@@ -338,3 +398,123 @@ iot and embedded systems:
     - signal filtering function
     - event generator
     - controller class
+
+# === BIOINFORMATICS ===
+bioinformatics:
+  tasks:
+    - Align DNA sequences using dynamic programming
+    - Predict protein secondary structures from amino acid sequences
+    - Analyze gene expression data from microarrays
+    - Identify potential binding sites in genetic sequences
+    - Cluster similar proteins based on sequence similarity
+    - Reconstruct phylogenetic trees from sequence data
+    - Predict the impact of mutations on protein function
+    - Convert between different biological sequence formats
+  libraries:
+    - biopython
+    - numpy
+    - pandas
+    - scikit-bio
+    - biotite
+    - dendropy
+    - pysam
+    - mygene
+  code_forms:
+    - sequence analysis function
+    - alignment pipeline class
+    - feature extraction generator
+    - prediction model class
+    - sequence conversion utility
+    - clustering algorithm function
+    - annotation decorator
+    - phylogenetic analysis pipeline
+
+# === CYBERSECURITY ===
+cybersecurity:
+  tasks:
+    - Scan files for potential security vulnerabilities
+    - Encrypt and decrypt data with key management
+    - Generate secure random passwords with configurable constraints
+    - Detect and prevent common injection attacks
+    - Analyze network traffic patterns for anomalies
+    - Implement challenge-response authentication mechanisms
+    - Sanitize user inputs against XSS vulnerabilities
+    - Create file integrity monitoring systems
+  libraries:
+    - cryptography
+    - scapy
+    - pycryptodome
+    - pyopenssl
+    - owasp-zap
+    - requests-security
+    - bandit
+    - paramiko
+  code_forms:
+    - security scanner class
+    - encryption utility function
+    - vulnerability checker decorator
+    - authentication middleware
+    - packet analysis function
+    - input validation class
+    - security monitoring service
+    - threat detection pipeline
+
+# === AUDIO PROCESSING ===
+audio processing:
+  tasks:
+    - Extract frequency components from audio signals
+    - Filter background noise from voice recordings
+    - Detect speech segments in audio files
+    - Classify audio clips into predefined categories
+    - Modify audio playback speed without pitch distortion
+    - Synthesize sounds based on parameter configurations
+    - Measure similarity between audio samples
+    - Implement beat detection for musical analysis
+  libraries:
+    - librosa
+    - pydub
+    - pyaudio
+    - soundfile
+    - scipy
+    - pedalboard
+    - aubio
+    - madmom
+  code_forms:
+    - audio transformation function
+    - filter pipeline class
+    - feature extraction generator
+    - audio classification model
+    - waveform manipulation utility
+    - signal processing decorator
+    - audio comparison function
+    - synthesis engine class
+
+# === GEOSPATIAL ANALYSIS ===
+geospatial analysis:
+  tasks:
+    - Calculate distances between geographic coordinates
+    - Cluster location data into meaningful regions
+    - Detect patterns in spatial distribution of events
+    - Convert between different geographic coordinate systems
+    - Optimize routes between multiple locations
+    - Analyze geographic data for temporal trends
+    - Match addresses to geographic coordinates
+    - Generate heatmaps from location density data
+  libraries:
+    - geopandas
+    - shapely
+    - pyproj
+    - folium
+    - rasterio
+    - cartopy
+    - geopy
+    - osmnx
+  code_forms:
+    - coordinate transformation function
+    - spatial indexing class
+    - routing algorithm function
+    - geocoding utility
+    - spatial visualization generator
+    - region analysis class
+    - map projection decorator
+    - geospatial data pipeline

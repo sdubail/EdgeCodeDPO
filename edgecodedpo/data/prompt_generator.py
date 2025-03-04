@@ -39,14 +39,14 @@ def create_first_stage_prompt(combination: dict[str, Any]) -> str:
 
     libraries_str = ", ".join(libraries)
 
-    prompt = f"""Generate 5 different and specific Python code examples in the form of a {code_form} that address the task: "{task}" in the {domain} domain.
+    prompt = f"""Generate 5 very different and specific Python code examples in the form of a {code_form} that address the task: "{task}" in the {domain} domain.
 
 You can use one or more of these libraries: {libraries_str}.
 
 For each example:
-1. Create a UNIQUE and SPECIFIC use case in this domain (be very precise about the context and needs)
-2. Generate Python code that directly solves the task (no type annotations, no comments, go straight to the point)
-3. Provide a simple prompt that could be used to ask another AI model to generate exactly this code
+1. Create a UNIQUE and SPECIFIC use case in this domain (be very precise about the context and needs, but stay super concise.)
+2. Generate Python code that directly solves the task (no type annotations, no comments, go straight to the point with beginner python level)
+3. Provide a simple prompt that could be used to ask another AI model to generate exactly this code. This part very important and shouldn't be neglected.
 
 Your response must be a valid JSON object with the following structure:
 {{
@@ -54,13 +54,16 @@ Your response must be a valid JSON object with the following structure:
     {{
       "use_case": "Detailed description of the first use case",
       "code": "Your Python code here",
-      "prompt": "Simple prompt to generate this code"
+      "prompt": "Simple prompt to generate exactly this code"
     }},
     ... (repeat for all 5 examples)
   ]
 }}
 
-Remember that each example should correspond to a distinct use case, and the code should be targeted, practical, and directly address the task without superfluous elements."""
+Remember that each example should correspond to a distinct use case, and the code should be targeted, practical, and directly address the task without superfluous elements.
+Even if the task is already precise, find a way to propose 5 ideas that are significantly different from each other for the sake of diversity.
+On the other hand, if the task is too broad/big, imagine an example that solves only a specific part of it.
+"""
 
     return prompt
 
