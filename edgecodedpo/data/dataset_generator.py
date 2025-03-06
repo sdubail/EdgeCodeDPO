@@ -4,7 +4,8 @@ import os
 from typing import Any
 
 import yaml
-from datasets import Dataset
+from datasets import Dataset, load_from_disk
+from huggingface_hub import HfApi, login
 
 from edgecodedpo.clients.openai_client import OpenAIAsyncClient
 from edgecodedpo.config import settings
@@ -312,3 +313,56 @@ async def generate_dataset(
     print(f"  - Number of domains: {len(set(dataset_dict['domain']))}")
     print(f"  - Number of tasks: {len(set(dataset_dict['task']))}")
     print(f"  - Number of code forms: {len(set(dataset_dict['code_form']))}")
+
+
+async def upload_to_huggingface(
+    dataset_path: str,
+    repo_id: str,
+    private: bool = False,
+    hf_token: str | None = None,
+) -> None:
+    """
+    Upload a saved dataset to the HuggingFace Hub.
+
+    Args:
+        dataset_path: Path to the saved HuggingFace dataset
+        repo_id: ID of the repository on HuggingFace Hub (format: 'username/repo_name')
+        private: Whether the repository should be private
+        hf_token: HuggingFace API token (if not provided, will use the one from settings)
+    """
+    from edgecodedpo.config import settings
+
+    # Use the token from settings if not provided
+    token = hf_token or settings.HF_KEY
+    if not token:
+        raise ValueError(
+            "HuggingFace API token is required. Set it in the constructor, as HF_KEY environment variable, or in .env file."
+        )
+
+    # Login to HuggingFace
+    login(token=token)
+
+    # Load the dataset from disk
+    dataset = load_from_disk(dataset_path)
+
+    # Upload the dataset to HuggingFace Hub
+    dataset.push_to_hub(
+        repo_id=repo_id,
+        private=private,
+        token=token,
+    )
+
+    # Get the API instance for additional operations
+    api = HfApi(token=token)
+
+    # Add relevant metadata to the repository
+    api.upload_file(
+        path_or_fileobj=b'{"tags": ["code", "dpo", "edge-code-dpo"]}',
+        path_in_repo=".tags",
+        repo_id=repo_id,
+        repo_type="dataset",
+    )
+
+    print(
+        f"Dataset uploaded successfully to HuggingFace Hub at: https://huggingface.co/datasets/{repo_id}"
+    )
