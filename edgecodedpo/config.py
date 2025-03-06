@@ -9,6 +9,7 @@ env_file_name = ".env"
 
 class Settings(BaseSettings):
     OPENAI_KEY: str = ""
+    HF_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=(PYPKG_ROOT_FOLDER / env_file_name).as_posix(),
