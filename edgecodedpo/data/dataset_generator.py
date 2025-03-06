@@ -164,14 +164,27 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
         results: List of results from the API calls
 
     Returns:
-        Dictionary with "rejected" and "chosen" columns for HuggingFace dataset
+        Dictionary with "rejected" and "chosen" columns for HuggingFace dataset,
+        along with metadata columns (domain, task, code_form)
     """
-    dataset_dict: dict[str, Any] = {"rejected": [], "chosen": []}
+    dataset_dict: dict[str, Any] = {
+        "rejected": [],
+        "chosen": [],
+        "domain": [],
+        "task": [],
+        "code_form": [],
+    }
 
     for result in results:
         if "error" in result:
             print(f"Skipping result with error: {result['error']}")
             continue
+
+        # Extract combination metadata
+        combination = result["combination"]
+        domain = combination["domain"]
+        task = combination["task"]
+        code_form = combination["code_form"]
 
         first_stage = result["first_stage"]
         second_stage = result["second_stage"]
@@ -200,6 +213,11 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
                 prompt=corresponding_prompt, response=example.get("improved_code", "")
             )
             dataset_dict["chosen"].append(chosen_pair)
+
+            # Add metadata for each example
+            dataset_dict["domain"].append(domain)
+            dataset_dict["task"].append(task)
+            dataset_dict["code_form"].append(str(code_form))
 
     return dataset_dict
 
@@ -263,10 +281,18 @@ async def generate_dataset(
 
     # Convert to dataset format
     dataset_dict = convert_to_dataset_format(results)
+    import pdb
 
+    pdb.set_trace()
     # Create and save the HuggingFace dataset
     dataset = Dataset.from_dict(
-        {"rejected": dataset_dict["rejected"], "chosen": dataset_dict["chosen"]}
+        {
+            "rejected": dataset_dict["rejected"],
+            "chosen": dataset_dict["chosen"],
+            "domain": dataset_dict["domain"],
+            "task": dataset_dict["task"],
+            "code_form": dataset_dict["code_form"],
+        }
     )
 
     # Save the dataset
@@ -278,3 +304,6 @@ async def generate_dataset(
     print("Dataset statistics:")
     print(f"  - Rejected examples: {len(dataset_dict['rejected'])}")
     print(f"  - Chosen examples: {len(dataset_dict['chosen'])}")
+    print(f"  - Number of domains: {len(set(dataset_dict['domain']))}")
+    print(f"  - Number of tasks: {len(set(dataset_dict['task']))}")
+    print(f"  - Number of code forms: {len(set(dataset_dict['code_form']))}")

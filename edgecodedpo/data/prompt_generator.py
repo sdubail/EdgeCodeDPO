@@ -28,15 +28,14 @@ def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
             task_name = task_entry.get("name", "")
             code_forms = task_entry.get("code_forms", [])
 
-            for code_form in code_forms:
-                combinations.append(  # noqa: PERF401 - should be a comprehension list but let's keep it simple
-                    {
-                        "domain": domain,
-                        "task": task_name,
-                        "libraries": libraries,
-                        "code_form": code_form,
-                    }
-                )
+            combinations.append(  # noqa: PERF401 - should be a comprehension list but let's keep it simple
+                {
+                    "domain": domain,
+                    "task": task_name,
+                    "libraries": libraries,
+                    "code_form": code_forms,
+                }
+            )
 
     return combinations
 
@@ -48,11 +47,11 @@ def create_first_stage_prompt(combination: dict[str, Any]) -> str:
     domain = combination["domain"]
     task = combination["task"]
     libraries = combination["libraries"]
-    code_form = combination["code_form"]
+    code_forms = combination["code_form"]
 
     libraries_str = ", ".join(libraries)
 
-    prompt = f"""Generate 5 very different and specific Python code examples in the form of a {code_form} that address the task: "{task}" in the {domain} domain.
+    prompt = f"""Generate 3 very different and specific Python code examples, one for each code form in the list : {code_forms}, that address the task: "{task}" in the {domain} domain.
 
 You can use one or more of these libraries: {libraries_str}.
 
@@ -69,12 +68,12 @@ Your response must be a valid JSON object with the following structure:
       "code": "Your Python code here",
       "prompt": "Simple prompt to generate exactly this code"
     }},
-    ... (repeat for all 5 examples)
+    ... (repeat for all 3 examples)
   ]
 }}
 
-Remember that each example should correspond to a distinct use case, and the code should be targeted, practical, and directly address the task without superfluous elements.
-Even if the task is already precise, find a way to propose 5 ideas that are significantly different from each other for the sake of diversity.
+Remember that each example should correspond to a distinct use case for a distinct code form, and the code should be targeted, practical, and directly address the task without superfluous elements.
+Even if the task is already precise, find a way to propose 3 ideas that are significantly different from each other for the sake of diversity.
 On the other hand, if the task is too broad/big, imagine an example that solves only a specific part of it.
 """
 
