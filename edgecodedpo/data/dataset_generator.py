@@ -189,8 +189,13 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
         first_stage = result["first_stage"]
         second_stage = result["second_stage"]
 
-        # Process first stage examples (rejected)
         first_examples = first_stage["parsed_response"].get("examples", [])
+        second_examples = second_stage["parsed_response"].get("improved_examples", [])
+        # if len(first_examples) != len(second_examples):
+        #     import pdb
+
+        #     pdb.set_trace()
+        # Process first stage examples (rejected)
         for example in first_examples:
             # Format as conversation pair
             rejected_pair = format_conversation_pair(
@@ -199,7 +204,7 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
             dataset_dict["rejected"].append(rejected_pair)
 
         # Process second stage examples (chosen)
-        second_examples = second_stage["parsed_response"].get("improved_examples", [])
+
         for example in second_examples:
             # Get the matching first-stage prompt
             corresponding_prompt = ""
@@ -264,26 +269,26 @@ async def generate_dataset(
     client = OpenAIAsyncClient(model=openai_model, api_key=settings.OPENAI_KEY)
 
     # Process all combinations
-    results = await process_batch(
-        client=client,
-        combinations=sampled_combinations,
-        batch_size=batch_size,
-        system_message=system_message,
-    )
+    # results = await process_batch(
+    #     client=client,
+    #     combinations=sampled_combinations,
+    #     batch_size=batch_size,
+    #     system_message=system_message,
+    # )
 
     # Save intermediate results if requested
     if save_intermediate:
         intermediate_path = os.path.join(output_path, "intermediate_results.json")
         os.makedirs(output_path, exist_ok=True)
-        with open(intermediate_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2)
+        # with open(intermediate_path, "w", encoding="utf-8") as f:
+        with open(intermediate_path, encoding="utf-8") as f:
+            # json.dump(results, f, indent=2)
+            results = json.load(f)
         print(f"Saved intermediate results to {intermediate_path}")
 
     # Convert to dataset format
     dataset_dict = convert_to_dataset_format(results)
-    import pdb
 
-    pdb.set_trace()
     # Create and save the HuggingFace dataset
     dataset = Dataset.from_dict(
         {
