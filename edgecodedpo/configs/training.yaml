@@ -1,0 +1,71 @@
+# === DPO TRAINING CONFIG ===
+
+# Default model settings
+model:
+  name: "Qwen/Qwen2-0.5B-Instruct"  # Base model to use
+  max_length: 1024                  # Maximum sequence length
+  max_prompt_length: 512            # Maximum prompt length
+  truncation_mode: "keep_end"       # Truncation mode (keep_end or keep_start)
+  padding_free: false               # Use padding-free forward pass
+
+# Optimization settings
+optimization:
+  quantization:
+    enabled: true                   # Whether to use quantization
+    load_in_4bit: true              # Use 4-bit quantization
+    bnb_4bit_use_double_quant: true # Use double quantization
+    bnb_4bit_quant_type: "nf4"      # Quantization type (nf4 or fp4)
+    bnb_4bit_compute_dtype: "bfloat16" # Compute dtype
+
+  lora:
+    enabled: true                   # Whether to use LoRA
+    r: 16                           # LoRA attention dimension
+    lora_alpha: 16                  # LoRA alpha parameter
+    lora_dropout: 0.05              # LoRA dropout
+    target_modules: null            # Target modules (null for auto-detection)
+
+# DPO settings
+dpo:
+  beta: 0.1                         # Controls deviation from reference model
+  loss_type: "sigmoid"              # Loss type (sigmoid, hinge, ipo, etc.)
+  reference_free: false             # Whether to use reference-free DPO
+  label_smoothing: 0.0              # Label smoothing (for robust DPO)
+  generate_during_eval: true        # Generate samples during evaluation
+
+# Training settings
+training:
+  num_train_epochs: 3               # Number of training epochs
+  per_device_train_batch_size: 4    # Per-device training batch size
+  per_device_eval_batch_size: 4     # Per-device evaluation batch size
+  gradient_accumulation_steps: 1    # Gradient accumulation steps
+  learning_rate: 5e-5               # Learning rate
+  lr_scheduler_type: "cosine"       # LR scheduler type
+  warmup_ratio: 0.1                 # Warmup ratio
+  weight_decay: 0.01                # Weight decay
+  bf16: true                        # Use bfloat16 precision
+  fp16: false                       # Use fp16 precision
+  eval_split: 0.1                   # Evaluation split ratio
+  logging_steps: 10                 # Logging steps
+  save_steps: 100                   # Save steps
+  eval_steps: 100                   # Evaluation steps
+  save_total_limit: 3               # Maximum number of checkpoints to keep
+  ddp_find_unused_parameters: false # For distributed training
+  dataloader_num_workers: 4         # Number of dataloader workers
+  dataset_num_proc: 4               # Number of dataset preprocessing workers
+#  report_to: "tensorboard"          # Logging platform (tensorboard, wandb, etc.)
+
+# Advanced DPO settings
+advanced_dpo:
+  sync_ref_model: false             # Sync reference model with policy model
+  ref_model_mixup_alpha: 0.6        # Mixup alpha for reference model sync
+  ref_model_sync_steps: 512         # Steps between reference model syncs
+  precompute_ref_log_probs: false   # Precompute reference model log probs
+  rpo_alpha: null                   # RPO alpha parameter
+  use_weighting: false              # Use weighting (for WPO)
+  
+# HuggingFace Hub settings
+hub:
+  push_to_hub: false                # Whether to push to HF Hub
+  hub_model_id: null                # HF Hub model ID
+  hub_strategy: "every_save"        # Hub strategy (every_save, end, checkpoint, etc.)
+  hub_private_repo: false           # Whether the repository is private

@@ -1,3 +1,7 @@
+"""
+Entry point for the CLI application.
+"""
+
 import asyncio
 import os
 
@@ -6,6 +10,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from edgecodedpo.data.dataset_generator import generate_dataset, upload_to_huggingface
+from edgecodedpo.training.integration import register_training_commands
 
 app = typer.Typer(
     name="edgecodedpo",
@@ -196,6 +201,10 @@ def version() -> None:
     console.print(
         "[bold]EdgeCodeDPO[/bold] version: [cyan]0.1.0[/cyan] (early development)"
     )
+
+
+# Register the training commands
+register_training_commands(app)
 
 
 def main() -> None:

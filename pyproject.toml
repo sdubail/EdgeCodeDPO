@@ -1,6 +1,6 @@
 [project]
 name = "edgecodedpo"
-description = ""
+description = "A toolkit for generating and fine-tuning code models using Direct Preference Optimization (DPO)"
 authors = [{ name = "Simon", email = "dubailsimon@gmail.com" }]
 readme = "README.md"
 classifiers = [
@@ -17,17 +17,31 @@ dynamic = ["version"]
 scripts = { edgecodedpo = "edgecodedpo:__main__.app" }
 
 dependencies = [
+    # Core dependencies
     "numpy",
     "matplotlib",
     "typer",
     "tqdm",
     "pandas",
     "pydantic_settings",
-    "openai>=1.0.0",
-    "datasets>=2.14.0",
     "aiohttp>=3.8.0",
     "pathlib",
-    "huggingface-hub>=0.19.0"
+
+    # Dataset generation
+    "datasets>=2.14.0",
+    "openai>=1.0.0",
+    "huggingface-hub>=0.19.0",
+    
+    # DPO training
+    "torch>=2.0.0",
+    "transformers>=4.38.0",
+    "trl>=0.8.1",
+    "accelerate>=0.27.0",
+    "bitsandbytes>=0.41.0",
+    "peft>=0.7.0",
+    "safetensors>=0.4.0",
+    # "tensorboard>=2.15.0",
+    "rich>=13.5.0",
 ]
 
 [project.optional-dependencies]
@@ -39,7 +53,14 @@ dev = [
 doc = [
 ]
 
-all = ["edgecodedpo[dev]", "edgecodedpo[doc]"]
+# Optional dependencies for specific training setups
+# training = [
+#   "wandb",            # For tracking experiments
+#   "deepspeed>=0.12.0", # For distributed training
+#   "unsloth>=0.5.0",   # For faster LoRA training
+# ]
+
+all = ["edgecodedpo[dev]", "edgecodedpo[doc]", "edgecodedpo[training]"]
 
 [tool.ruff]
 target-version = "py310"
@@ -74,6 +95,7 @@ ignore = [
 [tool.ruff.lint.flake8-import-conventions.aliases]
 numpy = "np"
 pandas = "pd"
+torch = "torch"
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"                 # Disallow all relative imports.
