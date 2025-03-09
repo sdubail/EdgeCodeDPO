@@ -165,12 +165,13 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
         results: List of results from the API calls
 
     Returns:
-        Dictionary with "rejected" and "chosen" columns for HuggingFace dataset,
+        Dictionary with "prompt", "chosen", and "rejected" columns for HuggingFace dataset,
         along with metadata columns (domain, task, code_form)
     """
     dataset_dict: dict[str, Any] = {
-        "rejected": [],
+        "prompt": [],
         "chosen": [],
+        "rejected": [],
         "domain": [],
         "task": [],
         "code_form": [],
@@ -192,33 +193,33 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
 
         first_examples = first_stage["parsed_response"].get("examples", [])
         second_examples = second_stage["parsed_response"].get("improved_examples", [])
-        # if len(first_examples) != len(second_examples):
-        #     import pdb
 
-        #     pdb.set_trace()
-        # Process first stage examples (rejected)
-        for example in first_examples:
-            # Format as conversation pair
-            rejected_pair = format_conversation_pair(
-                prompt=example.get("prompt", ""), response=example.get("code", "")
-            )
-            dataset_dict["rejected"].append(rejected_pair)
-
-        # Process second stage examples (chosen)
-
+        # Process examples to create prompt-chosen-rejected format
         for example in second_examples:
-            # Get the matching first-stage prompt
+            # Find corresponding first-stage example to get the prompt
+            original_code = example.get("original_code", "")
             corresponding_prompt = ""
+
             for first_example in first_examples:
-                if first_example.get("code", "") == example.get("original_code", ""):
+                if first_example.get("code", "") == original_code:
                     corresponding_prompt = first_example.get("prompt", "")
                     break
 
-            # Format as conversation pair
-            chosen_pair = format_conversation_pair(
-                prompt=corresponding_prompt, response=example.get("improved_code", "")
-            )
-            dataset_dict["chosen"].append(chosen_pair)
+            if not corresponding_prompt:
+                print("Warning: Could not find matching prompt for example. Skipping.")
+                continue
+
+            # Format the data in the expected conversational format
+            prompt_message = [{"role": "user", "content": corresponding_prompt}]
+            chosen_message = [
+                {"role": "assistant", "content": example.get("improved_code", "")}
+            ]
+            rejected_message = [{"role": "assistant", "content": original_code}]
+
+            # Add to dataset
+            dataset_dict["prompt"].append(prompt_message)
+            dataset_dict["chosen"].append(chosen_message)
+            dataset_dict["rejected"].append(rejected_message)
 
             # Add metadata for each example
             dataset_dict["domain"].append(domain)
@@ -293,6 +294,7 @@ async def generate_dataset(
     # Create and save the HuggingFace dataset
     dataset = Dataset.from_dict(
         {
+            "prompt": dataset_dict["prompt"],
             "rejected": dataset_dict["rejected"],
             "chosen": dataset_dict["chosen"],
             "domain": dataset_dict["domain"],
