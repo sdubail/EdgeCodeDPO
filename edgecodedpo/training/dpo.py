@@ -193,22 +193,26 @@ def train_dpo(
     # Set up DPO configuration
     training_args = DPOConfig(
         output_dir=output_dir,
-        num_train_epochs=dpo_config.get("num_train_epochs", 3),
-        per_device_train_batch_size=dpo_config.get("per_device_train_batch_size", 4),
-        per_device_eval_batch_size=dpo_config.get("per_device_eval_batch_size", 4),
-        gradient_accumulation_steps=dpo_config.get("gradient_accumulation_steps", 1),
-        learning_rate=dpo_config.get("learning_rate", 5e-5),
+        num_train_epochs=int(dpo_config.get("num_train_epochs", 3)),
+        per_device_train_batch_size=int(
+            dpo_config.get("per_device_train_batch_size", 4)
+        ),
+        per_device_eval_batch_size=int(dpo_config.get("per_device_eval_batch_size", 4)),
+        gradient_accumulation_steps=int(
+            dpo_config.get("gradient_accumulation_steps", 1)
+        ),
+        learning_rate=float(dpo_config.get("learning_rate", 1e-6)),
         lr_scheduler_type=dpo_config.get("lr_scheduler_type", "cosine"),
-        warmup_ratio=dpo_config.get("warmup_ratio", 0.1),
-        logging_steps=dpo_config.get("logging_steps", 10),
+        warmup_ratio=float(dpo_config.get("warmup_ratio", 0.1)),
+        logging_steps=int(dpo_config.get("logging_steps", 10)),
         save_strategy=dpo_config.get("save_strategy", "steps"),
-        save_steps=dpo_config.get("save_steps", 100),
+        save_steps=int(dpo_config.get("save_steps", 100)),
         evaluation_strategy=dpo_config.get("evaluation_strategy", "steps"),
-        eval_steps=dpo_config.get("eval_steps", 100),
-        beta=dpo_config.get("beta", 0.1),
+        eval_steps=int(dpo_config.get("eval_steps", 100)),
+        beta=float(dpo_config.get("beta", 0.1)),
         loss_type=dpo_config.get("loss_type", "sigmoid"),
-        max_length=dpo_config.get("max_length", 1024),
-        max_prompt_length=dpo_config.get("max_prompt_length", 512),
+        max_length=int(dpo_config.get("max_length", 1024)),
+        max_prompt_length=int(dpo_config.get("max_prompt_length", 512)),
         bf16=dpo_config.get("bf16", True),
         fp16=dpo_config.get("fp16", False),
         logging_dir=os.path.join(output_dir, "logs"),
@@ -244,6 +248,9 @@ def train_dpo(
         eval_dataset = dataset.get("test", None)
 
     # Initialize DPO trainer
+    import pdb
+
+    pdb.set_trace()
     trainer = DPOTrainer(
         model=model,
         args=training_args,
