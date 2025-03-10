@@ -248,9 +248,6 @@ def train_dpo(
         eval_dataset = dataset.get("test", None)
 
     # Initialize DPO trainer
-    import pdb
-
-    pdb.set_trace()
     trainer = DPOTrainer(
         model=model,
         args=training_args,
