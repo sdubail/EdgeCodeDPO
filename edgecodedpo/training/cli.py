@@ -9,6 +9,7 @@ import typer
 import yaml
 from rich.console import Console
 from rich.panel import Panel
+from rich.traceback import Traceback
 
 from edgecodedpo.training.dpo import load_and_evaluate_model, train_dpo
 
@@ -390,6 +391,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
                     border_style="red",
                 )
             )
+            console.print(Traceback())
             raise typer.Exit(code=1)
 
     @app.command(name="evaluate", help="Evaluate a DPO-trained model")
@@ -459,4 +461,5 @@ def register_dpo_commands(app: typer.Typer) -> None:
                     border_style="red",
                 )
             )
+            console.print(Traceback())
             raise typer.Exit(code=1)

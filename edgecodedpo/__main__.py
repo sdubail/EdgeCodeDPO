@@ -8,6 +8,7 @@ import os
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.traceback import Traceback
 
 from edgecodedpo.data.dataset_generator import generate_dataset, upload_to_huggingface
 from edgecodedpo.training.integration import register_training_commands
@@ -117,6 +118,7 @@ def generate(
                 border_style="red",
             )
         )
+        console.print(Traceback())
         raise typer.Exit(code=1)
 
 
@@ -192,6 +194,7 @@ def upload(
                 border_style="red",
             )
         )
+        console.print(Traceback())
         raise typer.Exit(code=1)
 
 
