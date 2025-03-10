@@ -12,7 +12,7 @@ from typing import Any
 import datasets
 import torch
 import typer
-from datasets import Dataset, load_from_disk
+from datasets import Dataset, load_dataset, load_from_disk
 from huggingface_hub import HfApi, login
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
 from transformers import (
@@ -110,9 +110,10 @@ def preprocess_dataset(
 ) -> Dataset:
     """
     Preprocess the dataset for DPO training.
+    Supports loading from local path or directly from the HuggingFace Hub.
 
     Args:
-        dataset_path: Path to the dataset
+        dataset_path: Path to the dataset or HuggingFace Hub dataset ID
         tokenizer: Tokenizer to use for preprocessing
         max_length: Maximum sequence length
         num_proc: Number of processes to use for preprocessing
@@ -120,8 +121,30 @@ def preprocess_dataset(
     Returns:
         Dataset: Preprocessed dataset
     """
-    # Load dataset
-    dataset = load_from_disk(dataset_path)
+    # Check if the dataset_path is a local path
+    if os.path.exists(dataset_path):
+        # Load dataset from local path
+        print(f"Loading dataset from local path: {dataset_path}")
+        dataset = load_from_disk(dataset_path)
+    else:
+        # Attempt to load from HuggingFace Hub
+        print(f"Attempting to load dataset from HuggingFace Hub: {dataset_path}")
+        try:
+            # Check if a specific split is specified (e.g., "dataset_name:train")
+            if ":" in dataset_path:
+                repo_id, split = dataset_path.split(":", 1)
+                dataset = load_dataset(repo_id, split=split)
+            else:
+                # Try loading the default split
+                dataset = load_dataset(dataset_path)
+
+                # If dataset is a DatasetDict with multiple splits, prefer 'train'
+                if hasattr(dataset, "keys") and "train" in dataset:
+                    dataset = dataset["train"]
+        except Exception as e:
+            raise ValueError(
+                f"Failed to load dataset from HuggingFace Hub: {dataset_path}. Error: {e!s}"
+            )
 
     # Make sure it has the expected format with chosen and rejected samples
     required_columns = ["chosen", "rejected"]
