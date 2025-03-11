@@ -9,20 +9,20 @@ model:
   padding_free: false               # Use padding-free forward pass
 
 # Optimization settings
-# optimization:
-#   quantization:
-#     enabled: true                   # Whether to use quantization
-#     load_in_4bit: true              # Use 4-bit quantization
-#     bnb_4bit_use_double_quant: true # Use double quantization
-#     bnb_4bit_quant_type: "nf4"      # Quantization type (nf4 or fp4)
-#     bnb_4bit_compute_dtype: "bfloat16" # Compute dtype
+optimization:
+  quantization:
+    enabled: true                   # Whether to use quantization
+    load_in_4bit: true              # Use 4-bit quantization
+    bnb_4bit_use_double_quant: true # Use double quantization
+    bnb_4bit_quant_type: "nf4"      # Quantization type (nf4 or fp4)
+    bnb_4bit_compute_dtype: "bfloat16" # Compute dtype
 
-#   lora:
-#     enabled: true                   # Whether to use LoRA
-#     r: 16                           # LoRA attention dimension
-#     lora_alpha: 16                  # LoRA alpha parameter
-#     lora_dropout: 0.05              # LoRA dropout
-#     target_modules: null            # Target modules (null for auto-detection)
+  lora:
+    enabled: true                   # Whether to use LoRA
+    r: 16                           # LoRA attention dimension
+    lora_alpha: 16                  # LoRA alpha parameter
+    lora_dropout: 0.05              # LoRA dropout
+    target_modules: null            # Target modules (null for auto-detection)
 
 # DPO settings
 dpo:
