@@ -148,6 +148,12 @@ def upload(
         "-t",
         help="HuggingFace API token (optional, defaults to HF_KEY in environment)",
     ),
+    fuse: bool = typer.Option(
+        False,
+        "--fuse",
+        "-f",
+        help="Fuse all datasets found in gen_data* directories before uploading",
+    ),
 ) -> None:
     """
     Upload a dataset to HuggingFace Hub.
@@ -168,6 +174,7 @@ def upload(
     console.print(f"  Repository ID: [cyan]{repo_id}[/cyan]")
     console.print(f"  Private repository: [cyan]{private}[/cyan]")
     console.print(f"  Custom token provided: [cyan]{bool(token)}[/cyan]")
+    console.print(f"  Fuse datasets: [cyan]{fuse}[/cyan]")
 
     try:
         # Run the upload function
@@ -177,6 +184,7 @@ def upload(
                 repo_id=repo_id,
                 private=private,
                 hf_token=token,
+                fuse_datasets=fuse,
             )
         )
 
@@ -194,7 +202,6 @@ def upload(
                 border_style="red",
             )
         )
-        console.print(Traceback())
         raise typer.Exit(code=1)
 
 

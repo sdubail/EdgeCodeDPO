@@ -1,5 +1,6 @@
 .env
-**/gen_data
+**/gen_data**
+**/fused_data**
 **/__pycache__
 .vscode
 edgecodedpo.egg-info

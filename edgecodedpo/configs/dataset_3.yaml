@@ -1,0 +1,1120 @@
+# === DATA PROCESSING ===
+data processing:
+  libraries:
+    - pandas
+    - numpy
+    - dask
+    - polars
+    - pyjanitor
+  tasks:
+    - name: Create a data type inference system for unknown columns
+      code_forms:
+        - pattern matcher
+        - probabilistic classifier
+        - rule-based detector
+    
+    - name: Implement incremental dataframe operations for memory efficiency
+      code_forms:
+        - chunked processor
+        - generator-based transformer
+        - lazy evaluator
+    
+    - name: Build a data quality score calculator with multiple metrics
+      code_forms:
+        - metric aggregator
+        - quality profile generator
+        - threshold analyzer
+    
+    - name: Create a time-bucketing system for temporal data analysis
+      code_forms:
+        - interval generator
+        - bucket assignment function
+        - temporal aggregator
+    
+    - name: Implement a custom missing value imputation strategy
+      code_forms:
+        - statistical imputer
+        - nearest-neighbor filler
+        - regression predictor
+    
+    - name: Build a column dependency analyzer for data lineage
+      code_forms:
+        - dependency graph builder
+        - correlation analyzer
+        - transformation tracker
+    
+    - name: Create a data transformation audit logger
+      code_forms:
+        - operation recorder
+        - transformation history builder
+        - change summarizer
+    
+    - name: Implement a stratified sampling method for balanced datasets
+      code_forms:
+        - strata identifier
+        - proportional sampler
+        - representation validator
+
+# === TEXT PROCESSING ===
+text processing:
+  libraries:
+    - nltk
+    - spacy
+    - transformers
+    - gensim
+    - regex
+    - textblob
+  tasks:
+    - name: Implement a contextual spelling correction system
+      code_forms:
+        - error detector
+        - candidate generator
+        - context-aware selector
+    
+    - name: Create a topic coherence calculator for text collections
+      code_forms:
+        - word co-occurrence counter
+        - semantic similarity calculator
+        - coherence scorer
+    
+    - name: Build a text readability analyzer with multiple metrics
+      code_forms:
+        - complexity calculator
+        - syllable counter
+        - readability index generator
+    
+    - name: Implement a keyphrase extraction algorithm
+      code_forms:
+        - candidate extractor
+        - ranking algorithm
+        - post-processor
+    
+    - name: Create a custom tokenizer for technical content
+      code_forms:
+        - specialized token recognizer
+        - rule-based splitter
+        - token normalizer
+    
+    - name: Build a coreference resolution system for pronouns
+      code_forms:
+        - mention detector
+        - candidate ranker
+        - resolution algorithm
+    
+    - name: Implement word sense disambiguation using context
+      code_forms:
+        - context analyzer
+        - sense inventory manager
+        - disambiguation resolver
+    
+    - name: Create a text segmentation system for topic boundaries
+      code_forms:
+        - coherence calculator
+        - boundary detector
+        - segmentation evaluator
+
+# === WEB DEVELOPMENT ===
+web development:
+  libraries:
+    - flask
+    - fastapi
+    - django
+    - requests
+    - httpx
+    - starlette
+    - pydantic
+    - jwt
+  tasks:
+    - name: Implement a request body validator with custom error messages
+      code_forms:
+        - schema validator
+        - error formatter
+        - field constraint checker
+    
+    - name: Create a middleware for request-scoped context variables
+      code_forms:
+        - context manager
+        - request scope handler
+        - variable accessor
+    
+    - name: Build a response compression system with content type detection
+      code_forms:
+        - content analyzer
+        - compression selector
+        - response transformer
+    
+    - name: Implement a simplified OAuth2 client for third-party authentication
+      code_forms:
+        - authorization code handler
+        - token exchanger
+        - user info fetcher
+    
+    - name: Create a structured logging middleware for API requests
+      code_forms:
+        - log formatter
+        - context enricher
+        - field extractor
+    
+    - name: Build a URL parameter encryption system for sensitive data
+      code_forms:
+        - parameter encryptor
+        - query string transformer
+        - encryption key manager
+    
+    - name: Implement a conditional request processor with etag support
+      code_forms:
+        - etag generator
+        - condition evaluator
+        - response cache manager
+    
+    - name: Create a request throttling system based on client identifiers
+      code_forms:
+        - client identifier
+        - rate counter
+        - request limiter
+
+# === DATABASE ===
+database:
+  libraries:
+    - sqlalchemy
+    - psycopg2
+    - pymongo
+    - redis
+    - peewee
+    - alembic
+    - mongodb
+  tasks:
+    - name: Implement a query result pagination system with cursors
+      code_forms:
+        - cursor encoder
+        - position tracker
+        - paginated fetcher
+    
+    - name: Create a simple database connection pooling manager
+      code_forms:
+        - connection manager
+        - pool size adjuster
+        - health checker
+    
+    - name: Build a query parameter sanitizer for SQL injection prevention
+      code_forms:
+        - parameter cleaner
+        - type enforcer
+        - placeholder replacer
+    
+    - name: Implement a database query builder with composable filters
+      code_forms:
+        - clause generator
+        - condition composer
+        - query assembler
+    
+    - name: Create a lightweight transaction manager with savepoints
+      code_forms:
+        - transaction controller
+        - savepoint manager
+        - rollback handler
+    
+    - name: Build a soft deletion implementation with recovery options
+      code_forms:
+        - deletion marker
+        - filtered query builder
+        - recovery manager
+    
+    - name: Implement an optimistic locking strategy for concurrent updates
+      code_forms:
+        - version tracker
+        - conflict detector
+        - retry mechanism
+    
+    - name: Create a schema difference analyzer between environments
+      code_forms:
+        - schema extractor
+        - difference calculator
+        - change reporter
+
+# === MATHEMATICS AND SCIENTIFIC COMPUTING ===
+mathematics and scientific computing:
+  libraries:
+    - numpy
+    - scipy
+    - sympy
+    - statsmodels
+    - matplotlib
+    - mpmath
+    - sklearn
+  tasks:
+    - name: Implement a polynomial curve fitting algorithm with regularization
+      code_forms:
+        - coefficient estimator
+        - regularization controller
+        - error analyzer
+    
+    - name: Create a numerical integrator with adaptive step size
+      code_forms:
+        - step size controller
+        - error estimator
+        - interval splitter
+    
+    - name: Build a system for interpolating missing data points in time series
+      code_forms:
+        - gap detector
+        - interpolation strategy selector
+        - confidence estimator
+    
+    - name: Implement a basic Monte Carlo simulation framework
+      code_forms:
+        - random sampler
+        - experiment runner
+        - result aggregator
+    
+    - name: Create a system for solving tridiagonal matrix equations
+      code_forms:
+        - tridiagonal solver
+        - matrix formatter
+        - solution validator
+    
+    - name: Build a basic Fourier transform implementation
+      code_forms:
+        - transform calculator
+        - frequency analyzer
+        - signal reconstructor
+    
+    - name: Implement a gradient descent optimizer with momentum
+      code_forms:
+        - gradient calculator
+        - step controller
+        - momentum tracker
+    
+    - name: Create a system for calculating confidence intervals
+      code_forms:
+        - interval estimator
+        - bootstrap resampler
+        - significance tester
+
+# === IMAGE PROCESSING ===
+image processing:
+  libraries:
+    - pillow
+    - opencv-python
+    - scikit-image
+    - imageio
+    - pytesseract
+    - torchvision
+  tasks:
+    - name: Implement a histogram equalization algorithm for image enhancement
+      code_forms:
+        - histogram calculator
+        - distribution transformer
+        - pixel mapper
+    
+    - name: Create a noise reduction filter with edge preservation
+      code_forms:
+        - edge detector
+        - selective smoother
+        - detail preserver
+    
+    - name: Build a basic image segmentation system using thresholding
+      code_forms:
+        - threshold finder
+        - region labeler
+        - segment extractor
+    
+    - name: Implement a simple feature detection algorithm
+      code_forms:
+        - keypoint detector
+        - descriptor extractor
+        - feature matcher
+    
+    - name: Create a color space conversion system
+      code_forms:
+        - color transformer
+        - channel separator
+        - gamut mapper
+    
+    - name: Build an image compression algorithm with quality control
+      code_forms:
+        - frequency transformer
+        - coefficient quantizer
+        - quality adjuster
+    
+    - name: Implement a basic image stitching algorithm
+      code_forms:
+        - feature aligner
+        - homography calculator
+        - blending function
+    
+    - name: Create a contrast enhancement system with local adaptation
+      code_forms:
+        - local contrast analyzer
+        - adaptive filter
+        - enhancement controller
+
+# === CLASSIC ALGORITHMS ===
+classic algorithms:
+  libraries:
+    - collections
+    - heapq
+    - bisect
+    - sortedcontainers
+    - networkx
+    - itertools
+  tasks:
+    - name: Implement a least recently used (LRU) cache
+      code_forms:
+        - cache container
+        - access tracker
+        - eviction policy
+    
+    - name: Create a trie data structure for prefix matching
+      code_forms:
+        - trie node
+        - prefix searcher
+        - word inserter
+    
+    - name: Build a topological sort implementation for directed graphs
+      code_forms:
+        - dependency resolver
+        - cycle detector
+        - order generator
+    
+    - name: Implement a binary search tree with self-balancing
+      code_forms:
+        - tree node
+        - rotation handler
+        - balance calculator
+    
+    - name: Create a priority queue with dynamic priorities
+      code_forms:
+        - priority manager
+        - element tracker
+        - heap maintainer
+    
+    - name: Build a string matching algorithm with Boyer-Moore technique
+      code_forms:
+        - bad character rule
+        - good suffix rule
+        - shift calculator
+    
+    - name: Implement a basic union-find data structure with path compression
+      code_forms:
+        - set representative
+        - tree compressor
+        - union operator
+    
+    - name: Create a sliding window algorithm for substring problems
+      code_forms:
+        - window manager
+        - constraint checker
+        - result collector
+
+# === MACHINE LEARNING ===
+machine learning:
+  libraries:
+    - scikit-learn
+    - tensorflow
+    - pytorch
+    - xgboost
+    - lightgbm
+    - keras
+    - optuna
+  tasks:
+    - name: Implement a feature selection method using mutual information
+      code_forms:
+        - information calculator
+        - feature ranker
+        - threshold selector
+    
+    - name: Create a learning rate scheduler with warmup and decay
+      code_forms:
+        - warmup generator
+        - decay function
+        - schedule manager
+    
+    - name: Build a custom cross-validation splitter for time series
+      code_forms:
+        - time-based splitter
+        - fold generator
+        - leakage preventer
+    
+    - name: Implement a simple ensemble method with model weighting
+      code_forms:
+        - prediction collector
+        - weight optimizer
+        - ensemble combiner
+    
+    - name: Create a feature engineering pipeline for text data
+      code_forms:
+        - text preprocessor
+        - feature extractor
+        - transformer compositor
+    
+    - name: Build a hyperparameter tuning system with Bayesian optimization
+      code_forms:
+        - parameter sampler
+        - objective evaluator
+        - acquisition optimizer
+    
+    - name: Implement an early stopping mechanism with patience
+      code_forms:
+        - performance tracker
+        - patience controller
+        - checkpoint manager
+    
+    - name: Create a simple anomaly detection system using isolation forest
+      code_forms:
+        - tree builder
+        - anomaly scorer
+        - threshold determiner
+
+# === AUTOMATION AND SYSTEM ===
+automation and system:
+  libraries:
+    - subprocess
+    - pathlib
+    - watchdog
+    - fabric
+    - psutil
+    - schedule
+    - asyncio
+  tasks:
+    - name: Implement a job scheduler with dependency resolution
+      code_forms:
+        - task scheduler
+        - dependency checker
+        - execution sequencer
+    
+    - name: Create a file watcher with change classification
+      code_forms:
+        - event listener
+        - change classifier
+        - notification dispatcher
+    
+    - name: Build a process resource usage monitor with alerting
+      code_forms:
+        - resource collector
+        - threshold checker
+        - alert generator
+    
+    - name: Implement a configuration loader with environment overrides
+      code_forms:
+        - config parser
+        - environment merger
+        - validation checker
+    
+    - name: Create a command execution wrapper with timeout handling
+      code_forms:
+        - process launcher
+        - timeout controller
+        - output collector
+    
+    - name: Build a simple task queue with priority levels
+      code_forms:
+        - queue manager
+        - priority sorter
+        - worker dispatcher
+    
+    - name: Implement a retry mechanism with exponential backoff
+      code_forms:
+        - retry controller
+        - backoff calculator
+        - attempt limiter
+    
+    - name: Create a file rotation system for logs with size constraints
+      code_forms:
+        - size monitor
+        - rotation handler
+        - archive manager
+
+# === DEVOPS AND CI/CD ===
+devops and CI/CD:
+  libraries:
+    - docker
+    - pytest
+    - ansible
+    - fabric
+    - prometheus-client
+    - jenkins
+    - kubernetes
+  tasks:
+    - name: Implement a service health check monitor
+      code_forms:
+        - endpoint checker
+        - result analyzer
+        - status reporter
+    
+    - name: Create a simple rolling deployment strategy
+      code_forms:
+        - deployment sequencer
+        - health verifier
+        - rollback trigger
+    
+    - name: Build a configuration validator for infrastructure definitions
+      code_forms:
+        - schema validator
+        - dependency checker
+        - security verifier
+    
+    - name: Implement a simple feature flag system for deployments
+      code_forms:
+        - flag manager
+        - toggle controller
+        - rule evaluator
+    
+    - name: Create a smoke test runner for deployment verification
+      code_forms:
+        - test executor
+        - result analyzer
+        - report generator
+    
+    - name: Build a version compatibility checker for dependencies
+      code_forms:
+        - version extractor
+        - compatibility matcher
+        - constraint validator
+    
+    - name: Implement a log aggregator with pattern detection
+      code_forms:
+        - log parser
+        - pattern matcher
+        - alert generator
+    
+    - name: Create a simple service discovery system
+      code_forms:
+        - service registrar
+        - lookup resolver
+        - health tracker
+
+# === WEB SCRAPING ===
+web scraping:
+  libraries:
+    - beautifulsoup4
+    - scrapy
+    - selenium
+    - requests
+    - playwright
+    - httpx
+    - aiohttp
+  tasks:
+    - name: Implement a polite crawler with robots.txt parsing
+      code_forms:
+        - robots parser
+        - delay calculator
+        - permission checker
+    
+    - name: Create a content extractor with CSS selectors
+      code_forms:
+        - selector engine
+        - content normalizer
+        - result formatter
+    
+    - name: Build a pagination handler for multi-page results
+      code_forms:
+        - next page detector
+        - URL extractor
+        - result aggregator
+    
+    - name: Implement a user-agent rotator to avoid blocking
+      code_forms:
+        - agent pool manager
+        - rotation strategy
+        - header formatter
+    
+    - name: Create a data cleaning pipeline for scraped content
+      code_forms:
+        - html cleaner
+        - text normalizer
+        - structure extractor
+    
+    - name: Build a simple sitemap parser and crawler
+      code_forms:
+        - sitemap locator
+        - URL extractor
+        - crawl scheduler
+    
+    - name: Implement a form submission handler with field detection
+      code_forms:
+        - form analyzer
+        - field populator
+        - submission handler
+    
+    - name: Create a simple web API client with rate limiting
+      code_forms:
+        - request formatter
+        - rate controller
+        - response parser
+
+# === FINANCE AND ECONOMICS ===
+finance and economics:
+  libraries:
+    - pandas
+    - numpy
+    - scipy
+    - statsmodels
+    - pyfolio
+    - quantlib-python
+    - yfinance
+  tasks:
+    - name: Implement a moving average crossover strategy
+      code_forms:
+        - signal generator
+        - crossover detector
+        - position manager
+    
+    - name: Create a portfolio performance calculator with risk metrics
+      code_forms:
+        - return calculator
+        - risk analyzer
+        - benchmark comparator
+    
+    - name: Build a dividend discount model for stock valuation
+      code_forms:
+        - cash flow estimator
+        - discount rate calculator
+        - present value computer
+    
+    - name: Implement a simple options pricing model
+      code_forms:
+        - price calculator
+        - volatility estimator
+        - greeks computer
+    
+    - name: Create a bond yield calculator with different conventions
+      code_forms:
+        - cashflow modeler
+        - yield solver
+        - convention handler
+    
+    - name: Build a cost basis tracker for tax lot accounting
+      code_forms:
+        - lot tracker
+        - sale allocator
+        - gain calculator
+    
+    - name: Implement a technical indicator library
+      code_forms:
+        - oscillator calculator
+        - trend detector
+        - volume analyzer
+    
+    - name: Create a simple algorithmic trading backtester
+      code_forms:
+        - strategy executor
+        - market simulator
+        - performance evaluator
+
+# === GAMES AND SIMULATION ===
+games and simulation:
+  libraries:
+    - pygame
+    - numpy
+    - pymunk
+    - gymnasium
+    - pettingzoo
+    - noise
+    - networkx
+  tasks:
+    - name: Implement a grid-based pathfinding algorithm
+      code_forms:
+        - grid navigator
+        - path finder
+        - heuristic calculator
+    
+    - name: Create a simple particle system with physics
+      code_forms:
+        - particle emitter
+        - physics updater
+        - collision handler
+    
+    - name: Build a turn-based combat system with status effects
+      code_forms:
+        - combat resolver
+        - status manager
+        - effect applicator
+    
+    - name: Implement a procedural terrain generator with biomes
+      code_forms:
+        - noise generator
+        - biome classifier
+        - terrain builder
+    
+    - name: Create a finite state machine for game character AI
+      code_forms:
+        - state manager
+        - transition controller
+        - behavior executor
+    
+    - name: Build a resource management system with production chains
+      code_forms:
+        - resource tracker
+        - production calculator
+        - constraint enforcer
+    
+    - name: Implement a simple physics engine for 2D games
+      code_forms:
+        - collision detector
+        - force resolver
+        - position updater
+    
+    - name: Create a procedural quest generator
+      code_forms:
+        - template selector
+        - parameter randomizer
+        - narrative assembler
+
+# === API AND SERVICE INTEGRATION ===
+api and integration:
+  libraries:
+    - requests
+    - httpx
+    - aiohttp
+    - pydantic
+    - tenacity
+    - backoff
+    - marshmallow
+  tasks:
+    - name: Implement a response caching system with TTL
+      code_forms:
+        - cache key generator
+        - expiration manager
+        - response storer
+    
+    - name: Create a request retry mechanism with backoff
+      code_forms:
+        - retry controller
+        - backoff calculator
+        - error classifier
+    
+    - name: Build a request/response logging middleware
+      code_forms:
+        - request logger
+        - response formatter
+        - sensitive data masker
+    
+    - name: Implement a simple API response deserializer
+      code_forms:
+        - schema mapper
+        - type converter
+        - validation handler
+    
+    - name: Create a service client with connection pooling
+      code_forms:
+        - connection manager
+        - request formatter
+        - response handler
+    
+    - name: Build a webhook dispatcher with delivery guarantees
+      code_forms:
+        - event formatter
+        - delivery tracker
+        - retry handler
+    
+    - name: Implement an API request batching system
+      code_forms:
+        - request batcher
+        - dependency resolver
+        - response splitter
+    
+    - name: Create a service health monitor with circuit breaking
+      code_forms:
+        - health checker
+        - status tracker
+        - circuit controller
+
+# === IOT AND EMBEDDED SYSTEMS ===
+iot and embedded systems:
+  libraries:
+    - paho-mqtt
+    - pyserial
+    - gpiozero
+    - adafruit-io
+    - influxdb
+    - pika
+    - bleak
+  tasks:
+    - name: Implement a sensor data collector with buffering
+      code_forms:
+        - data reader
+        - buffer manager
+        - batch sender
+    
+    - name: Create a device discovery system with capability detection
+      code_forms:
+        - network scanner
+        - capability detector
+        - device registrar
+    
+    - name: Build a command dispatcher for remote devices
+      code_forms:
+        - command serializer
+        - device selector
+        - response handler
+    
+    - name: Implement a data compression system for bandwidth efficiency
+      code_forms:
+        - delta encoder
+        - value compressor
+        - format optimizer
+    
+    - name: Create a message queue consumer with offline support
+      code_forms:
+        - message processor
+        - queue manager
+        - reconnection handler
+    
+    - name: Build a simple protocol adapter for legacy devices
+      code_forms:
+        - message converter
+        - protocol translator
+        - compatibility layer
+    
+    - name: Implement a simple scheduling system for device actions
+      code_forms:
+        - schedule manager
+        - trigger evaluator
+        - action dispatcher
+    
+    - name: Create a sensor data validation and filtering pipeline
+      code_forms:
+        - range validator
+        - outlier detector
+        - signal smoother
+
+# === BIOINFORMATICS ===
+bioinformatics:
+  libraries:
+    - biopython
+    - numpy
+    - pandas
+    - scikit-bio
+    - biotite
+    - dendropy
+    - pysam
+    - mygene
+  tasks:
+    - name: Implement a DNA sequence motif finder
+      code_forms:
+        - pattern matcher
+        - position weight matrix
+        - enrichment calculator
+    
+    - name: Create a sequence alignment visualizer
+      code_forms:
+        - alignment formatter
+        - color scheme mapper
+        - display generator
+    
+    - name: Build a gene expression profile comparator
+      code_forms:
+        - profile normalizer
+        - similarity calculator
+        - differential detector
+    
+    - name: Implement a sequence translation tool with reading frames
+      code_forms:
+        - frame translator
+        - codon mapper
+        - protein generator
+    
+    - name: Create a basic phylogenetic tree builder
+      code_forms:
+        - distance calculator
+        - tree constructor
+        - visualization formatter
+    
+    - name: Build a primer design tool for PCR
+      code_forms:
+        - candidate generator
+        - specificity checker
+        - property calculator
+    
+    - name: Implement a simple structural alignment for proteins
+      code_forms:
+        - structure parser
+        - alignment calculator
+        - scoring function
+    
+    - name: Create a gene ontology enrichment analyzer
+      code_forms:
+        - term mapper
+        - enrichment calculator
+        - significance tester
+
+# === CYBERSECURITY ===
+cybersecurity:
+  libraries:
+    - cryptography
+    - scapy
+    - pycryptodome
+    - pyopenssl
+    - owasp-zap
+    - requests-security
+    - bandit
+    - paramiko
+  tasks:
+    - name: Implement a password strength evaluator
+      code_forms:
+        - entropy calculator
+        - pattern checker
+        - dictionary validator
+    
+    - name: Create a file integrity monitor with checksums
+      code_forms:
+        - hash calculator
+        - change detector
+        - report generator
+    
+    - name: Build a sensitive data detector with pattern matching
+      code_forms:
+        - pattern matcher
+        - context analyzer
+        - confidence scorer
+    
+    - name: Implement a simple intrusion detection system
+      code_forms:
+        - log analyzer
+        - pattern detector
+        - alert generator
+    
+    - name: Create a secure data deletion tool
+      code_forms:
+        - overwrite implementer
+        - verification checker
+        - recovery tester
+    
+    - name: Build a certificate validation and verification system
+      code_forms:
+        - chain validator
+        - revocation checker
+        - expiration monitor
+    
+    - name: Implement a secure key rotation mechanism
+      code_forms:
+        - key generator
+        - rotation scheduler
+        - compatibility manager
+    
+    - name: Create a simple input sanitizer for web security
+      code_forms:
+        - character filter
+        - encoding converter
+        - context-aware escaper
+
+# === AUDIO PROCESSING ===
+audio processing:
+  libraries:
+    - librosa
+    - pydub
+    - pyaudio
+    - soundfile
+    - scipy
+    - pedalboard
+    - aubio
+    - madmom
+  tasks:
+    - name: Implement a basic audio equalizer
+      code_forms:
+        - filter designer
+        - band adjuster
+        - spectrum analyzer
+    
+    - name: Create a pitch detection algorithm
+      code_forms:
+        - frequency analyzer
+        - peak detector
+        - note converter
+    
+    - name: Build a simple audio fingerprinting system
+      code_forms:
+        - feature extractor
+        - hash generator
+        - matcher algorithm
+    
+    - name: Implement a noise gate with threshold control
+      code_forms:
+        - level detector
+        - gate controller
+        - envelope follower
+    
+    - name: Create an audio time stretcher without pitch change
+      code_forms:
+        - phase vocoder
+        - window processor
+        - frame stitcher
+    
+    - name: Build a beat detection algorithm for music
+      code_forms:
+        - onset detector
+        - tempo estimator
+        - beat tracker
+    
+    - name: Implement a voice activity detector
+      code_forms:
+        - energy calculator
+        - threshold detector
+        - state manager
+    
+    - name: Create a simple audio compression algorithm
+      code_forms:
+        - dynamic range compressor
+        - threshold controller
+        - makeup gain adjuster
+
+# === GEOSPATIAL ANALYSIS ===
+geospatial analysis:
+  libraries:
+    - geopandas
+    - shapely
+    - pyproj
+    - folium
+    - rasterio
+    - cartopy
+    - geopy
+    - osmnx
+  tasks:
+    - name: Implement a point-in-polygon query system
+      code_forms:
+        - point tester
+        - spatial indexer
+        - result filter
+    
+    - name: Create a distance calculator for geographic coordinates
+      code_forms:
+        - haversine implementer
+        - projection converter
+        - distance matrix builder
+    
+    - name: Build a simple routing algorithm on a road network
+      code_forms:
+        - graph builder
+        - path finder
+        - distance optimizer
+    
+    - name: Implement a geocoding service with fuzzy matching
+      code_forms:
+        - address parser
+        - candidate finder
+        - result ranker
+    
+    - name: Create a spatial clustering algorithm for point data
+      code_forms:
+        - cluster detector
+        - distance calculator
+        - centroid finder
+    
+    - name: Build a raster data analyzer for terrain metrics
+      code_forms:
+        - slope calculator
+        - aspect determiner
+        - elevation processor
+    
+    - name: Implement a buffer generator for spatial features
+      code_forms:
+        - buffer calculator
+        - geometry processor
+        - dissolve handler
+    
+    - name: Create a map projection converter
+      code_forms:
+        - coordinate transformer
+        - projection selector
+        - distortion calculator

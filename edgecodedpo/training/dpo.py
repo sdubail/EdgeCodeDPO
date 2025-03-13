@@ -137,7 +137,6 @@ def preprocess_dataset(
             else:
                 # Try loading the default split
                 dataset = load_dataset(dataset_path)
-
                 # If dataset is a DatasetDict with multiple splits, prefer 'train'
                 if hasattr(dataset, "keys") and "train" in dataset:
                     dataset = dataset["train"]

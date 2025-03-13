@@ -271,21 +271,21 @@ async def generate_dataset(
     client = OpenAIAsyncClient(model=openai_model, api_key=settings.OPENAI_KEY)
 
     # Process all combinations
-    # results = await process_batch(
-    #     client=client,
-    #     combinations=sampled_combinations,
-    #     batch_size=batch_size,
-    #     system_message=system_message,
-    # )
+    results = await process_batch(
+        client=client,
+        combinations=sampled_combinations,
+        batch_size=batch_size,
+        system_message=system_message,
+    )
 
     # Save intermediate results if requested
     if save_intermediate:
         intermediate_path = os.path.join(output_path, "intermediate_results.json")
         os.makedirs(output_path, exist_ok=True)
-        # with open(intermediate_path, "w", encoding="utf-8") as f:
-        with open(intermediate_path, encoding="utf-8") as f:
-            # json.dump(results, f, indent=2)
-            results = json.load(f)
+        with open(intermediate_path, "w", encoding="utf-8") as f:
+            # with open(intermediate_path, encoding="utf-8") as f:
+            json.dump(results, f, indent=2)
+            # results = json.load(f)
         print(f"Saved intermediate results to {intermediate_path}")
 
     # Convert to dataset format
@@ -322,6 +322,7 @@ async def upload_to_huggingface(
     repo_id: str,
     private: bool = False,
     hf_token: str | None = None,
+    fuse_datasets: bool = False,
 ) -> None:
     """
     Upload a saved dataset to the HuggingFace Hub.
@@ -331,7 +332,13 @@ async def upload_to_huggingface(
         repo_id: ID of the repository on HuggingFace Hub (format: 'username/repo_name')
         private: Whether the repository should be private
         hf_token: HuggingFace API token (if not provided, will use the one from settings)
+        fuse_datasets: Whether to look for and fuse datasets in gen_data_* directories
     """
+    import glob
+    import os
+
+    from datasets import concatenate_datasets
+
     from edgecodedpo.config import settings
 
     # Use the token from settings if not provided
@@ -341,14 +348,63 @@ async def upload_to_huggingface(
             "HuggingFace API token is required. Set it in the constructor, as HF_KEY environment variable, or in .env file."
         )
 
+    final_dataset = None
+
+    # Check if we should fuse datasets
+    if fuse_datasets:
+        # Find all dataset directories matching the pattern
+        base_dir = os.path.dirname(os.path.dirname(dataset_path))
+        # Only match directories with numeric suffixes (gen_data_1, gen_data_2, etc.)
+        pattern = os.path.join(base_dir, "gen_data_[0-9]*/dataset")
+
+        # Find all matching dataset directories
+        dataset_paths = glob.glob(pattern)
+
+        # Sort paths to ensure consistent ordering (sorting by numeric suffix)
+        dataset_paths.sort(
+            key=lambda path: int(path.split("gen_data_")[1].split("/")[0])
+        )
+
+        print(f"Found {len(dataset_paths)} datasets to fuse")
+        if dataset_paths:
+            # Load and concatenate all datasets
+            datasets = []
+            for path in dataset_paths:
+                print(f"Loading dataset from {path}")
+                try:
+                    ds = load_from_disk(path)
+                    datasets.append(ds)
+                    print(f"  - Loaded dataset with {len(ds)} examples")
+                except Exception as e:
+                    print(f"  - Error loading dataset: {e}")
+
+            if datasets:
+                # Combine the datasets
+                print("Combining datasets...")
+                combined_dataset = concatenate_datasets(datasets)
+                print(f"Combined dataset has {len(combined_dataset)} examples")
+
+                # Save the combined dataset
+                fused_path = os.path.join(base_dir, "fused_data/dataset")
+                os.makedirs(os.path.dirname(fused_path), exist_ok=True)
+                combined_dataset.save_to_disk(fused_path)
+                print(f"Saved combined dataset to {fused_path}")
+
+                final_dataset = combined_dataset
+            else:
+                print("No valid datasets could be loaded for fusion")
+        else:
+            print("No datasets found for fusion")
+
+    # If no fusion occurred or fusion failed, use the original dataset
+    if final_dataset is None:
+        final_dataset = load_from_disk(dataset_path)
+
     # Login to HuggingFace
     login(token=token)
 
-    # Load the dataset from disk
-    dataset = load_from_disk(dataset_path)
-
     # Upload the dataset to HuggingFace Hub
-    dataset.push_to_hub(
+    final_dataset.push_to_hub(
         repo_id=repo_id,
         private=private,
         token=token,
