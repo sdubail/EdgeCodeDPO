@@ -214,6 +214,7 @@ def train_dpo(
         max_prompt_length=int(dpo_config.get("max_prompt_length", 512)),
         bf16=dpo_config.get("bf16", True),
         fp16=dpo_config.get("fp16", False),
+        precompute_ref_log_probs=dpo_config.get("precompute_ref_log_probs", False),
         logging_dir=os.path.join(output_dir, "logs"),
         # report_to=dpo_config.get("report_to", "tensorboard"),
         push_to_hub=push_to_hub,
