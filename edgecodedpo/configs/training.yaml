@@ -37,7 +37,7 @@ training:
   num_train_epochs: 3               # Number of training epochs
   per_device_train_batch_size: 4    # Per-device training batch size
   per_device_eval_batch_size: 4     # Per-device evaluation batch size
-  gradient_accumulation_steps: 1    # Gradient accumulation steps
+  gradient_accumulation_steps: 8    # Gradient accumulation steps
   learning_rate: 1e-6               # Learning rate
   lr_scheduler_type: "cosine"       # LR scheduler type
   warmup_ratio: 0.1                 # Warmup ratio
@@ -59,7 +59,7 @@ advanced_dpo:
   sync_ref_model: false             # Sync reference model with policy model
   ref_model_mixup_alpha: 0.6        # Mixup alpha for reference model sync
   ref_model_sync_steps: 512         # Steps between reference model syncs
-  precompute_ref_log_probs: false   # Precompute reference model log probs
+  precompute_ref_log_probs: true   # Precompute reference model log probs
   rpo_alpha: null                   # RPO alpha parameter
   use_weighting: false              # Use weighting (for WPO)
   
