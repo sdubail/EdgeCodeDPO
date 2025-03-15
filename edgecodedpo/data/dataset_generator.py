@@ -3,9 +3,14 @@ import json
 import os
 from typing import Any
 
+import matplotlib.pyplot as plt  # noqa: TID253
+import numpy as np
+import torch
 import yaml
-from datasets import Dataset, load_from_disk
+from datasets import Dataset, load_dataset, load_from_disk
 from huggingface_hub import HfApi, login
+from tqdm import tqdm
+from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
 from edgecodedpo.clients.openai_client import OpenAIAsyncClient
 from edgecodedpo.config import settings
@@ -424,3 +429,248 @@ async def upload_to_huggingface(
     print(
         f"Dataset uploaded successfully to HuggingFace Hub at: https://huggingface.co/datasets/{repo_id}"
     )
+
+
+async def generate_dataset_statistics(
+    dataset_path: str,
+    tokenizer_name_or_path: str,
+    output_dir: str,
+    use_gpu: bool = True,
+    batch_size: int = 32,
+) -> dict[str, Any]:
+    """
+    Generate statistics on token lengths for prompts, chosen, and rejected completions in a dataset.
+
+    Args:
+        dataset_path: Path to the dataset or HuggingFace dataset ID
+        tokenizer_name_or_path: Name or path of the tokenizer to use
+        output_dir: Directory to save the statistics and figures
+        use_gpu: Whether to use GPU for tokenization
+        batch_size: Batch size for processing
+
+    Returns:
+        Dictionary containing the statistics
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Load dataset
+    print(f"Loading dataset from {dataset_path}...")
+    if os.path.exists(dataset_path):
+        dataset = load_from_disk(dataset_path)
+    else:
+        # Attempt to load from HuggingFace Hub
+        try:
+            if ":" in dataset_path:
+                repo_id, split = dataset_path.split(":", 1)
+                dataset = load_dataset(repo_id, split=split)
+            else:
+                dataset = load_dataset(dataset_path)
+                if hasattr(dataset, "keys") and "train" in dataset:
+                    dataset = dataset["train"]
+        except Exception as e:
+            raise ValueError(f"Failed to load dataset: {e}")
+
+    # Load tokenizer
+    print(f"Loading tokenizer {tokenizer_name_or_path}...")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
+
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
+    print(f"Using device: {device}")
+
+    # Prepare to collect token lengths
+    prompt_lengths = []
+    chosen_lengths = []
+    rejected_lengths = []
+
+    # Process dataset in batches
+    for i in tqdm(range(0, len(dataset), batch_size), desc="Processing dataset"):
+        batch = dataset[i : i + batch_size]
+
+        # Process prompts
+        prompt_batch = []
+        for prompt in batch["prompt"]:
+            # Extract prompt content from conversation format
+            if (
+                isinstance(prompt, list)
+                and len(prompt) > 0
+                and isinstance(prompt[0], dict)
+            ):
+                # Assumes format like [{"role": "user", "content": "..."}]
+                prompt_text = prompt[0].get("content", "")
+            else:
+                prompt_text = str(prompt)
+            prompt_batch.append(prompt_text)
+
+        prompt_tokens = tokenizer(prompt_batch, return_tensors="pt", padding=True)
+        prompt_lengths.extend(
+            [sum(mask) for mask in prompt_tokens.attention_mask.tolist()]
+        )
+
+        # Process chosen completions
+        chosen_batch = []
+        for chosen in batch["chosen"]:
+            if (
+                isinstance(chosen, list)
+                and len(chosen) > 0
+                and isinstance(chosen[0], dict)
+            ):
+                chosen_text = chosen[0].get("content", "")
+            else:
+                chosen_text = str(chosen)
+            chosen_batch.append(chosen_text)
+
+        chosen_tokens = tokenizer(chosen_batch, return_tensors="pt", padding=True)
+        chosen_lengths.extend(
+            [sum(mask) for mask in chosen_tokens.attention_mask.tolist()]
+        )
+
+        # Process rejected completions
+        rejected_batch = []
+        for rejected in batch["rejected"]:
+            if (
+                isinstance(rejected, list)
+                and len(rejected) > 0
+                and isinstance(rejected[0], dict)
+            ):
+                rejected_text = rejected[0].get("content", "")
+            else:
+                rejected_text = str(rejected)
+            rejected_batch.append(rejected_text)
+
+        rejected_tokens = tokenizer(rejected_batch, return_tensors="pt", padding=True)
+        rejected_lengths.extend(
+            [sum(mask) for mask in rejected_tokens.attention_mask.tolist()]
+        )
+
+    # Calculate statistics
+    stats = {
+        "dataset_info": {
+            "path": dataset_path,
+            "size": len(dataset),
+            "tokenizer": tokenizer_name_or_path,
+        },
+        "prompt": calculate_stats(prompt_lengths),
+        "chosen": calculate_stats(chosen_lengths),
+        "rejected": calculate_stats(rejected_lengths),
+    }
+
+    # Save statistics to JSON
+    stats_path = os.path.join(output_dir, "token_length_stats.json")
+    with open(stats_path, "w") as f:
+        json.dump(stats, f, indent=2)
+    print(f"Statistics saved to {stats_path}")
+
+    # Generate and save figures
+    generate_figures(prompt_lengths, chosen_lengths, rejected_lengths, output_dir)
+
+    return stats
+
+
+def calculate_stats(values: list[int]) -> dict[str, float]:
+    """Calculate statistics for a list of values."""
+    values = np.array(values)
+    return {
+        "mean": float(np.mean(values)),
+        "median": float(np.median(values)),
+        "min": float(np.min(values)),
+        "max": float(np.max(values)),
+        "std": float(np.std(values)),
+        "q25": float(np.percentile(values, 25)),
+        "q75": float(np.percentile(values, 75)),
+        "q90": float(np.percentile(values, 90)),
+        "q95": float(np.percentile(values, 95)),
+        "q99": float(np.percentile(values, 99)),
+    }
+
+
+def generate_figures(
+    prompt_lengths: list[int],
+    chosen_lengths: list[int],
+    rejected_lengths: list[int],
+    output_dir: str,
+) -> None:
+    """Generate and save figures showing token length distributions."""
+    # Create a figure with 3 subplots
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
+
+    # Plot histograms
+    bins = np.linspace(
+        0, max(max(prompt_lengths), max(chosen_lengths), max(rejected_lengths)) + 50, 50
+    )
+
+    ax1.hist(prompt_lengths, bins=bins, alpha=0.7, color="blue")
+    ax1.set_title("Prompt Token Lengths")
+    ax1.set_xlabel("Token Length")
+    ax1.set_ylabel("Frequency")
+    ax1.axvline(np.mean(prompt_lengths), color="r", linestyle="dashed", linewidth=1)
+    ax1.axvline(np.median(prompt_lengths), color="g", linestyle="dashed", linewidth=1)
+    ax1.grid(alpha=0.3)
+    ax1.legend(["Mean", "Median", "Distribution"])
+
+    ax2.hist(chosen_lengths, bins=bins, alpha=0.7, color="green")
+    ax2.set_title("Chosen Completion Token Lengths")
+    ax2.set_xlabel("Token Length")
+    ax2.set_ylabel("Frequency")
+    ax2.axvline(np.mean(chosen_lengths), color="r", linestyle="dashed", linewidth=1)
+    ax2.axvline(np.median(chosen_lengths), color="g", linestyle="dashed", linewidth=1)
+    ax2.grid(alpha=0.3)
+    ax2.legend(["Mean", "Median", "Distribution"])
+
+    ax3.hist(rejected_lengths, bins=bins, alpha=0.7, color="red")
+    ax3.set_title("Rejected Completion Token Lengths")
+    ax3.set_xlabel("Token Length")
+    ax3.set_ylabel("Frequency")
+    ax3.axvline(np.mean(rejected_lengths), color="r", linestyle="dashed", linewidth=1)
+    ax3.axvline(np.median(rejected_lengths), color="g", linestyle="dashed", linewidth=1)
+    ax3.grid(alpha=0.3)
+    ax3.legend(["Mean", "Median", "Distribution"])
+
+    plt.tight_layout()
+
+    # Save the figure
+    figure_path = os.path.join(output_dir, "token_length_distributions.png")
+    plt.savefig(figure_path, dpi=300, bbox_inches="tight")
+    print(f"Figure saved to {figure_path}")
+
+    # Generate combined density plot for comparison
+    plt.figure(figsize=(10, 6))
+
+    # Plot kernel density estimates instead of histograms for clearer comparison
+    plt.hist(
+        prompt_lengths,
+        bins=bins,
+        alpha=0.3,
+        density=True,
+        color="blue",
+        label="Prompts",
+    )
+    plt.hist(
+        chosen_lengths,
+        bins=bins,
+        alpha=0.3,
+        density=True,
+        color="green",
+        label="Chosen",
+    )
+    plt.hist(
+        rejected_lengths,
+        bins=bins,
+        alpha=0.3,
+        density=True,
+        color="red",
+        label="Rejected",
+    )
+
+    plt.title("Token Length Distributions Comparison")
+    plt.xlabel("Token Length")
+    plt.ylabel("Density")
+    plt.grid(alpha=0.3)
+    plt.legend()
+
+    # Save the comparison figure
+    comparison_path = os.path.join(output_dir, "token_length_comparison.png")
+    plt.savefig(comparison_path, dpi=300, bbox_inches="tight")
+    print(f"Comparison figure saved to {comparison_path}")
+    plt.close("all")

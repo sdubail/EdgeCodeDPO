@@ -10,7 +10,11 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import Traceback
 
-from edgecodedpo.data.dataset_generator import generate_dataset, upload_to_huggingface
+from edgecodedpo.data.dataset_generator import (
+    generate_dataset,
+    generate_dataset_statistics,
+    upload_to_huggingface,
+)
 from edgecodedpo.training.integration import register_training_commands
 
 app = typer.Typer(
@@ -202,6 +206,126 @@ def upload(
                 border_style="red",
             )
         )
+        raise typer.Exit(code=1)
+
+
+@app.command(name="stats", help="Generate token length statistics for a dataset")
+def stats(
+    dataset_path: str = typer.Option(
+        "simondubail/edgecodedpo",
+        "--dataset",
+        "-d",
+        help="Path to the dataset or HuggingFace dataset ID",
+    ),
+    tokenizer: str = typer.Option(
+        "Qwen/Qwen2-0.5B-Instruct",
+        "--tokenizer",
+        "-t",
+        help="Tokenizer to use for tokenization",
+    ),
+    output: str = typer.Option(
+        "edgecodedpo/data/stats",
+        "--output",
+        "-o",
+        help="Path to save the statistics and figures",
+    ),
+    cpu_only: bool = typer.Option(
+        False,
+        "--cpu-only",
+        help="Use CPU only for processing",
+    ),
+    batch_size: int = typer.Option(
+        32,
+        "--batch-size",
+        "-b",
+        help="Batch size for processing",
+    ),
+) -> None:
+    """
+    Generate token length statistics for a dataset.
+
+    This command analyzes the distribution of token lengths for prompts, chosen, and rejected
+    completions in a dataset and generates visualizations.
+    """
+    console.print(
+        Panel.fit(
+            "📊 [bold blue]EdgeCodeDPO Dataset Statistics Generator[/bold blue]",
+            title="Starting",
+            border_style="green",
+        )
+    )
+
+    console.print("[bold]Configuration:[/bold]")
+    console.print(f"  Dataset path: [cyan]{dataset_path}[/cyan]")
+    console.print(f"  Tokenizer: [cyan]{tokenizer}[/cyan]")
+    console.print(f"  Output path: [cyan]{output}[/cyan]")
+    console.print(f"  CPU only: [cyan]{cpu_only}[/cyan]")
+    console.print(f"  Batch size: [cyan]{batch_size}[/cyan]")
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output, exist_ok=True)
+
+    try:
+        # Run the statistics generator
+        stats_result = asyncio.run(
+            generate_dataset_statistics(
+                dataset_path=dataset_path,
+                tokenizer_name_or_path=tokenizer,
+                output_dir=output,
+                use_gpu=not cpu_only,
+                batch_size=batch_size,
+            )
+        )
+
+        # Display some key statistics
+        console.print("\n[bold]Key Statistics:[/bold]")
+        console.print("  [bold]Prompt token lengths:[/bold]")
+        console.print(f"    Mean: [cyan]{stats_result['prompt']['mean']:.1f}[/cyan]")
+        console.print(
+            f"    Median: [cyan]{stats_result['prompt']['median']:.1f}[/cyan]"
+        )
+        console.print(
+            f"    95th percentile: [cyan]{stats_result['prompt']['q95']:.1f}[/cyan]"
+        )
+        console.print(f"    Max: [cyan]{stats_result['prompt']['max']:.1f}[/cyan]")
+
+        console.print("  [bold]Chosen completion token lengths:[/bold]")
+        console.print(f"    Mean: [cyan]{stats_result['chosen']['mean']:.1f}[/cyan]")
+        console.print(
+            f"    Median: [cyan]{stats_result['chosen']['median']:.1f}[/cyan]"
+        )
+        console.print(
+            f"    95th percentile: [cyan]{stats_result['chosen']['q95']:.1f}[/cyan]"
+        )
+        console.print(f"    Max: [cyan]{stats_result['chosen']['max']:.1f}[/cyan]")
+
+        console.print("  [bold]Rejected completion token lengths:[/bold]")
+        console.print(f"    Mean: [cyan]{stats_result['rejected']['mean']:.1f}[/cyan]")
+        console.print(
+            f"    Median: [cyan]{stats_result['rejected']['median']:.1f}[/cyan]"
+        )
+        console.print(
+            f"    95th percentile: [cyan]{stats_result['rejected']['q95']:.1f}[/cyan]"
+        )
+        console.print(f"    Max: [cyan]{stats_result['rejected']['max']:.1f}[/cyan]")
+
+        console.print(
+            Panel.fit(
+                f"✅ [bold green]Statistics generation completed successfully![/bold green]\n"
+                f"Token length distributions saved to {output}/token_length_distributions.png\n"
+                f"Statistics saved to {output}/token_length_stats.json",
+                border_style="green",
+            )
+        )
+    except Exception as e:
+        console.print(
+            Panel.fit(
+                f"❌ [bold red]Error:[/bold red] {e}",
+                title="Statistics Generation Failed",
+                border_style="red",
+            )
+        )
+        console.print(Traceback())
         raise typer.Exit(code=1)
 
 
