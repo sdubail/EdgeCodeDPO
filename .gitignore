@@ -6,3 +6,4 @@
 edgecodedpo.egg-info
 **/.DS_Store
 **/models
+**/metric_plots

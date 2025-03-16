@@ -9,21 +9,18 @@ by Rafailov et al.
 import os
 from typing import Any
 
-import datasets
 import torch
-import typer
 from datasets import Dataset, load_dataset, load_from_disk
-from huggingface_hub import HfApi, login
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
-    TrainingArguments,
 )
 from trl import DPOConfig, DPOTrainer
 
 from edgecodedpo.config import settings
+from edgecodedpo.training.visualization import create_visualizations
 
 
 def load_model_and_tokenizer(
@@ -266,6 +263,16 @@ def train_dpo(
     metrics = train_result.metrics
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
+
+    # Generate visualization plots from TensorBoard logs
+    log_dir = os.path.join(output_dir, "logs")
+    viz_dir = os.path.join(output_dir, "visualizations")
+    try:
+        print("Generating metric visualizations...")
+        create_visualizations(log_dir=log_dir, output_dir=viz_dir)
+        print(f"Visualizations saved to {viz_dir}")
+    except Exception as e:
+        print(f"Warning: Could not generate visualizations: {e}")
 
     # Push to hub if requested
     if push_to_hub and hub_model_id:
