@@ -6,6 +6,7 @@ import asyncio
 import os
 
 import typer
+from datasets import load_dataset
 from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import Traceback
@@ -16,8 +17,6 @@ from edgecodedpo.data.dataset_generator import (
     upload_to_huggingface,
 )
 from edgecodedpo.training.integration import register_training_commands
-
-from datasets import load_dataset
 
 app = typer.Typer(
     name="edgecodedpo",
@@ -251,7 +250,6 @@ def download(
     console.print(f"  Custom token provided: [cyan]{bool(token)}[/cyan]")
 
     try:
-        
         dataset = load_dataset(repo_id)
         os.makedirs(dataset_path, exist_ok=True)
         dataset.save_to_disk(dataset_path)

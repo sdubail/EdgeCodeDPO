@@ -6,30 +6,31 @@ as described in the paper "Direct Preference Optimization: Your Language Model i
 by Rafailov et al.
 """
 
+import json
 import os
 from typing import Any
-import json
 
-import datasets
-import torch
 import numpy as np
-import typer
+import torch
 from datasets import Dataset, load_dataset, load_from_disk
-from huggingface_hub import HfApi, login
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
-    TrainingArguments,
 )
 from trl import DPOConfig, DPOTrainer
 
 from edgecodedpo.config import settings
 from edgecodedpo.training.visualization import create_visualizations
-from edgecodedpo.utils.generated_code_parsing import extract_code_blocks, preprocess_code_blocks, assemble_code_blocks
+from edgecodedpo.utils.generated_code_parsing import (
+    assemble_code_blocks,
+    extract_code_blocks,
+    preprocess_code_blocks,
+)
 
-from .eval_metrics import evaluate_code_quality, execute_code, calculate_code_similarity
+from .eval_metrics import calculate_code_similarity, evaluate_code_quality, execute_code
+
 
 def load_model_and_tokenizer(
     model_name_or_path: str,
@@ -281,7 +282,7 @@ def train_dpo(
         print(f"Visualizations saved to {viz_dir}")
     except Exception as e:
         print(f"Warning: Could not generate visualizations: {e}")
-         
+
     # Push to hub if requested
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
@@ -323,16 +324,39 @@ def load_and_evaluate_model(
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     # Load dataset
-    dataset = load_from_disk(dataset_path)
+    # Check if the dataset_path is a local path
+    if os.path.exists(dataset_path):
+        # Load dataset from local path
+        print(f"Loading dataset from local path: {dataset_path}")
+        dataset = load_from_disk(dataset_path)
+    else:
+        # Attempt to load from HuggingFace Hub
+        print(f"Attempting to load dataset from HuggingFace Hub: {dataset_path}")
+        try:
+            # Check if a specific split is specified (e.g., "dataset_name:train")
+            if ":" in dataset_path:
+                repo_id, split = dataset_path.split(":", 1)
+                dataset = load_dataset(repo_id, split=split)
+            else:
+                # Try loading the default split
+                dataset = load_dataset(dataset_path)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to load dataset from HuggingFace Hub: {dataset_path}. Error: {e!s}"
+            )
 
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     # Select evaluation examples
     if "test" in dataset:
-        eval_dataset = dataset["test"].select(range(min(num_examples, dataset['test'].num_rows)))
+        eval_dataset = dataset["test"].select(
+            range(min(num_examples, dataset["test"].num_rows))
+        )
     else:
-        eval_dataset = dataset["train"].select(range(min(num_examples, dataset['train'].num_rows)))
+        eval_dataset = dataset["train"].select(
+            range(min(num_examples, dataset["train"].num_rows))
+        )
 
     # Initialize metrics
     metrics = {
@@ -350,17 +374,17 @@ def load_and_evaluate_model(
     # Generate predictions and evaluate
     results = []
     for i, example in enumerate(eval_dataset):
-        
         # Get prompt from the example
         prompt = example.get("prompt")
         if prompt is None:
             continue
         else:
-            text_prompt = prompt[0]['content']
-        
-        
+            text_prompt = prompt[0]["content"]
+
         # Generate completion using the model
-        input_ids = tokenizer(text_prompt, return_tensors="pt").input_ids.to(model.device)
+        input_ids = tokenizer(text_prompt, return_tensors="pt").input_ids.to(
+            model.device
+        )
         output = model.generate(
             input_ids=input_ids,
             max_length=max_length,
@@ -368,13 +392,13 @@ def load_and_evaluate_model(
             temperature=0.7,
         )
         generated_code = tokenizer.decode(output[0], skip_special_tokens=True)
-        
+
         code_blocks = extract_code_blocks(generated_code)
         full_script = assemble_code_blocks(code_blocks)
         preprocess_blocks = preprocess_code_blocks(code_blocks)
         if len(preprocess_blocks) == 0:
             continue
-        
+
         block_metrics = {
             "type_annotation_coverage": [],
             "comment_density": [],
@@ -406,21 +430,25 @@ def load_and_evaluate_model(
                 metrics[metric_name] = metric_value / len(preprocess_blocks)
             else:
                 raise ValueError("Metric type not recognized")
-            
+
         # Compare with chosen code
         chosen_code = example.get("chosen")
         if chosen_code:
-            text_chosen_code = chosen_code[0]['content']
-            similarity_to_chosen = calculate_code_similarity(generated_code, text_chosen_code)
+            text_chosen_code = chosen_code[0]["content"]
+            similarity_to_chosen = calculate_code_similarity(
+                generated_code, text_chosen_code
+            )
         else:
             similarity_to_chosen = None
         metrics["similarity_to_chosen"].append(similarity_to_chosen)
-        
+
         # Compare with rejected code
         rejected_code = example.get("rejected")
         if rejected_code:
-            text_rejected_code = rejected_code[0]['content']
-            similarity_to_rejected = calculate_code_similarity(generated_code, text_rejected_code)
+            text_rejected_code = rejected_code[0]["content"]
+            similarity_to_rejected = calculate_code_similarity(
+                generated_code, text_rejected_code
+            )
         else:
             similarity_to_rejected = None
         metrics["similarity_to_rejected"].append(similarity_to_rejected)
@@ -455,8 +483,10 @@ def load_and_evaluate_model(
         """Recursively convert NumPy types to Python native types."""
         if isinstance(obj, np.ndarray):
             return obj.tolist()  # Convert NumPy array to Python list
-        elif isinstance(obj, np.generic):  
-            return obj.item()  # Convert NumPy scalars (e.g., np.float32, np.int64) to Python types
+        elif isinstance(obj, np.generic):
+            return (
+                obj.item()
+            )  # Convert NumPy scalars (e.g., np.float32, np.int64) to Python types
         elif isinstance(obj, dict):
             return {key: convert_numpy(value) for key, value in obj.items()}
         elif isinstance(obj, list):

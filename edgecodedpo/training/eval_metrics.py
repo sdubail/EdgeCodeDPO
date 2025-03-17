@@ -1,28 +1,29 @@
 import ast
 import subprocess
-from typing import Dict, Any
-import torch
+from typing import Any
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from transformers import AutoTokenizer, AutoModel
-from radon.complexity import cc_visit_ast
+import torch
 from pylint.lint import Run
 from pylint.reporters.text import TextReporter
+from radon.complexity import cc_visit_ast
+from sklearn.metrics.pairwise import cosine_similarity
+from transformers import AutoModel, AutoTokenizer
 
 from edgecodedpo.utils.generated_code_parsing import safe_parse_code
 
-def evaluate_code_quality(code: str) -> Dict[str, float|None]:
+
+def evaluate_code_quality(code: str) -> dict[str, float | None]:
     """
     Evaluate the quality of the generated code.
     """
     try:
         # Parse the code into an AST
         tree = safe_parse_code(code)
-            
+
         # Calculate type annotation coverage
         type_annotation_coverage = calculate_type_annotation_coverage(tree)
-        
+
         # Calculate docstring coverage
         docstring_coverage = calculate_docstring_coverage(tree)
 
@@ -34,7 +35,7 @@ def evaluate_code_quality(code: str) -> Dict[str, float|None]:
 
         # Calculate comment density
         comment_density = calculate_comment_density(code)
-        
+
         return {
             "type_annotation_coverage": type_annotation_coverage,
             "docstring_coverage": docstring_coverage,
@@ -53,10 +54,12 @@ def evaluate_code_quality(code: str) -> Dict[str, float|None]:
         }
 
 
-def calculate_type_annotation_coverage(tree: ast.AST, metric_level: int=2) -> float|None:
+def calculate_type_annotation_coverage(
+    tree: ast.AST, metric_level: int = 2
+) -> float | None:
     """
     Calculate the percentage of functions/methods with type annotations.
-    
+
     metric_level:
         0 - At least one annotation (return type OR any argument)
         1 - Return type AND at least one argument annotated
@@ -69,23 +72,46 @@ def calculate_type_annotation_coverage(tree: ast.AST, metric_level: int=2) -> fl
     match metric_level:
         case 0:
             annotated_functions = [
-                fn for fn in functions if fn.returns or any(arg.annotation for arg in fn.args.args if arg.arg not in {"self", "cls"})
+                fn
+                for fn in functions
+                if fn.returns
+                or any(
+                    arg.annotation
+                    for arg in fn.args.args
+                    if arg.arg not in {"self", "cls"}
+                )
             ]
         case 1:
             annotated_functions = [
-                fn for fn in functions if fn.returns and any(arg.annotation for arg in fn.args.args if arg.arg not in {"self", "cls"})
+                fn
+                for fn in functions
+                if fn.returns
+                and any(
+                    arg.annotation
+                    for arg in fn.args.args
+                    if arg.arg not in {"self", "cls"}
+                )
             ]
         case 2:
             annotated_functions = [
-                fn for fn in functions if fn.returns and all(arg.annotation for arg in fn.args.args if arg.arg not in {"self", "cls"})
+                fn
+                for fn in functions
+                if fn.returns
+                and all(
+                    arg.annotation
+                    for arg in fn.args.args
+                    if arg.arg not in {"self", "cls"}
+                )
             ]
         case _:
-            raise NotImplementedError("calculate_type_annotation_coverage has unrecognized metric_level.")
-    
+            raise NotImplementedError(
+                "calculate_type_annotation_coverage has unrecognized metric_level."
+            )
+
     return len(annotated_functions) / len(functions)
 
 
-def calculate_docstring_coverage(tree: ast.AST) -> float|None:
+def calculate_docstring_coverage(tree: ast.AST) -> float | None:
     """
     Calculate the percentage of functions/methods with docstrings.
     """
@@ -97,7 +123,7 @@ def calculate_docstring_coverage(tree: ast.AST) -> float|None:
     return len(documented_functions) / len(functions)
 
 
-def calculate_code_complexity(tree: ast.AST) -> float|None:
+def calculate_code_complexity(tree: ast.AST) -> float | None:
     """
     Calculate the average cyclomatic complexity of the code.
     """
@@ -114,7 +140,7 @@ def check_pep8_compliance(code: str) -> float:
     """
     Check PEP 8 compliance using pylint.
 
-    This function runs pylint on the given code and returns a normalized score 
+    This function runs pylint on the given code and returns a normalized score
     between 0.0 and 1.0, where 1.0 means full compliance.
 
     Criteria checked (PEP 8):
@@ -167,7 +193,7 @@ def calculate_comment_density(code: str) -> float:
     return comment_lines / total_lines
 
 
-def execute_code(code: str) -> Dict[str, Any]:
+def execute_code(code: str) -> dict[str, Any]:
     """
     Execute the generated code and check for errors.
     """
@@ -184,22 +210,23 @@ def execute_code(code: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "output": "", "error": str(e)}
 
+
 def calculate_code_similarity(code1: str, code2: str) -> float:
     """
     Calculate the similarity between two code snippets using GPT-2 embeddings with padding.
     """
-    
+
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModel.from_pretrained("gpt2")
 
     # Tokenize & pad to same length
     inputs = tokenizer(
-        [code1, code2], 
-        return_tensors="pt", 
-        padding="max_length", 
-        max_length=128, 
-        truncation=True
+        [code1, code2],
+        return_tensors="pt",
+        padding="max_length",
+        max_length=128,
+        truncation=True,
     )
 
     # Get embeddings from the model
@@ -212,4 +239,3 @@ def calculate_code_similarity(code1: str, code2: str) -> float:
 
     similarity = cosine_similarity([embeddings1], [embeddings2])[0][0]
     return similarity
-
