@@ -26,6 +26,7 @@ from transformers import (
 from trl import DPOConfig, DPOTrainer
 
 from edgecodedpo.config import settings
+from edgecodedpo.training.visualization import create_visualizations
 from edgecodedpo.utils.generated_code_parsing import extract_code_blocks, preprocess_code_blocks, assemble_code_blocks
 
 from .eval_metrics import evaluate_code_quality, execute_code, calculate_code_similarity
@@ -271,6 +272,16 @@ def train_dpo(
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
 
+    # Generate visualization plots from TensorBoard logs
+    log_dir = os.path.join(output_dir, "logs")
+    viz_dir = os.path.join(output_dir, "visualizations")
+    try:
+        print("Generating metric visualizations...")
+        create_visualizations(log_dir=log_dir, output_dir=viz_dir)
+        print(f"Visualizations saved to {viz_dir}")
+    except Exception as e:
+        print(f"Warning: Could not generate visualizations: {e}")
+         
     # Push to hub if requested
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
@@ -289,7 +300,13 @@ def load_and_evaluate_model(
     num_examples: int = 10,
 ) -> None:
     """
-    Load a trained model and evaluate it on the dataset with additional code quality metrics.
+    Load a trained model and evaluate it on the dataset.
+        Args:
+            model_path: Path to the trained model
+            dataset_path: Path to the dataset
+            output_dir: Directory to save the evaluation results
+            max_length: Maximum sequence length
+            num_examples: Number of examples to evaluate
     """
     # Load model and tokenizer
     try:
