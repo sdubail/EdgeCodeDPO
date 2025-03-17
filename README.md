@@ -103,6 +103,13 @@ edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-
 edgecodedpo upload --dataset-path edgecodedpo/data/gen_data/dataset --repo-id yourusername/edgecodedpo
 ```
 
+### Downloading Dataset from HuggingFace Hub
+
+```bash
+# Download a dataset from HuggingFace Hub
+edgecodedpo download --dataset-path edgecodedpo/data/repo_data/dataset --repo-id yourusername/edgecodedpo
+```
+
 ### Training with DPO
 
 ```bash

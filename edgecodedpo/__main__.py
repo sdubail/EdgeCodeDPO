@@ -17,6 +17,8 @@ from edgecodedpo.data.dataset_generator import (
 )
 from edgecodedpo.training.integration import register_training_commands
 
+from datasets import load_dataset
+
 app = typer.Typer(
     name="edgecodedpo",
     help="A toolkit for generating and fine-tuning code models using Direct Preference Optimization (DPO)",
@@ -203,6 +205,68 @@ def upload(
             Panel.fit(
                 f"❌ [bold red]Error:[/bold red] {e}",
                 title="Dataset Upload Failed",
+                border_style="red",
+            )
+        )
+        raise typer.Exit(code=1)
+
+
+@app.command(name="download", help="Download a dataset from HuggingFace Hub")
+def download(
+    dataset_path: str = typer.Option(
+        "edgecodedpo/data/gen_data/dataset",
+        "--dataset-path",
+        "-d",
+        help="Path where to the save the imported HuggingFace dataset",
+    ),
+    repo_id: str = typer.Option(
+        "simondubail/edgecodedpo",
+        "--repo-id",
+        "-r",
+        help="ID for the HuggingFace repository (format: 'username/repo_name')",
+    ),
+    token: str = typer.Option(
+        None,
+        "--token",
+        "-t",
+        help="HuggingFace API token (optional, defaults to HF_KEY in environment)",
+    ),
+) -> None:
+    """
+    Download a dataset from HuggingFace Hub.
+
+    This command download a previously generated and uploaded dataset to your local machine.
+    """
+    console.print(
+        Panel.fit(
+            "🚀 [bold blue]EdgeCodeDPO Dataset Download[/bold blue]",
+            title="Starting",
+            border_style="green",
+        )
+    )
+
+    console.print("[bold]Configuration:[/bold]")
+    console.print(f"  Dataset path: [cyan]{dataset_path}[/cyan]")
+    console.print(f"  Repository ID: [cyan]{repo_id}[/cyan]")
+    console.print(f"  Custom token provided: [cyan]{bool(token)}[/cyan]")
+
+    try:
+        
+        dataset = load_dataset(repo_id)
+        os.makedirs(dataset_path, exist_ok=True)
+        dataset.save_to_disk(dataset_path)
+
+        console.print(
+            Panel.fit(
+                f"✅ [bold green]Dataset downloaded successfully to {dataset_path}[/bold green]",
+                border_style="green",
+            )
+        )
+    except Exception as e:
+        console.print(
+            Panel.fit(
+                f"❌ [bold red]Error:[/bold red] {e}",
+                title="Dataset Download Failed",
                 border_style="red",
             )
         )
