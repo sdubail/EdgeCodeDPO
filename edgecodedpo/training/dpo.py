@@ -8,20 +8,27 @@ by Rafailov et al.
 
 import os
 from typing import Any
+import json
 
+import datasets
 import torch
+import numpy as np
+import typer
 from datasets import Dataset, load_dataset, load_from_disk
+from huggingface_hub import HfApi, login
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
+    TrainingArguments,
 )
 from trl import DPOConfig, DPOTrainer
 
 from edgecodedpo.config import settings
-from edgecodedpo.training.visualization import create_visualizations
+from edgecodedpo.utils.generated_code_parsing import extract_code_blocks, preprocess_code_blocks, assemble_code_blocks
 
+from .eval_metrics import evaluate_code_quality, execute_code, calculate_code_similarity
 
 def load_model_and_tokenizer(
     model_name_or_path: str,
@@ -264,16 +271,6 @@ def train_dpo(
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
 
-    # Generate visualization plots from TensorBoard logs
-    log_dir = os.path.join(output_dir, "logs")
-    viz_dir = os.path.join(output_dir, "visualizations")
-    try:
-        print("Generating metric visualizations...")
-        create_visualizations(log_dir=log_dir, output_dir=viz_dir)
-        print(f"Visualizations saved to {viz_dir}")
-    except Exception as e:
-        print(f"Warning: Could not generate visualizations: {e}")
-
     # Push to hub if requested
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
@@ -292,14 +289,7 @@ def load_and_evaluate_model(
     num_examples: int = 10,
 ) -> None:
     """
-    Load a trained model and evaluate it on the dataset.
-
-    Args:
-        model_path: Path to the trained model
-        dataset_path: Path to the dataset
-        output_dir: Directory to save the evaluation results
-        max_length: Maximum sequence length
-        num_examples: Number of examples to evaluate
+    Load a trained model and evaluate it on the dataset with additional code quality metrics.
     """
     # Load model and tokenizer
     try:
@@ -323,60 +313,146 @@ def load_and_evaluate_model(
 
     # Select evaluation examples
     if "test" in dataset:
-        eval_dataset = dataset["test"]
+        eval_dataset = dataset["test"].select(range(min(num_examples, dataset['test'].num_rows)))
     else:
-        eval_dataset = dataset.select(range(min(num_examples, len(dataset))))
+        eval_dataset = dataset["train"].select(range(min(num_examples, dataset['train'].num_rows)))
 
-    # Generate predictions for the selected examples
+    # Initialize metrics
+    metrics = {
+        "type_annotation_coverage": [],
+        "comment_density": [],
+        "docstring_coverage": [],
+        "code_complexity": [],
+        "pep8_compliance": [],
+        "execution_success_rate": 0,
+        # "output_correctness": 0,
+        "similarity_to_chosen": [],
+        "similarity_to_rejected": [],
+    }
+
+    # Generate predictions and evaluate
     results = []
-
-    for i, example in enumerate(
-        eval_dataset.select(range(min(num_examples, len(eval_dataset))))
-    ):
-        if i >= num_examples:
-            break
-
+    for i, example in enumerate(eval_dataset):
+        
         # Get prompt from the example
-        if "prompt" in example:
-            prompt = example["prompt"]
+        prompt = example.get("prompt")
+        if prompt is None:
+            continue
         else:
-            # Try to extract prompt from the conversation format
-            chosen_convo = example.get("chosen", [])
-            if (
-                chosen_convo
-                and isinstance(chosen_convo, list)
-                and len(chosen_convo) > 0
-            ):
-                prompt = chosen_convo[0].get("content", "")
-            else:
-                prompt = "No prompt found in example"
-
+            text_prompt = prompt[0]['content']
+        
+        
         # Generate completion using the model
-        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
+        input_ids = tokenizer(text_prompt, return_tensors="pt").input_ids.to(model.device)
         output = model.generate(
             input_ids=input_ids,
             max_length=max_length,
             num_return_sequences=1,
             temperature=0.7,
         )
+        generated_code = tokenizer.decode(output[0], skip_special_tokens=True)
+        
+        code_blocks = extract_code_blocks(generated_code)
+        full_script = assemble_code_blocks(code_blocks)
+        preprocess_blocks = preprocess_code_blocks(code_blocks)
+        if len(preprocess_blocks) == 0:
+            continue
+        
+        block_metrics = {
+            "type_annotation_coverage": [],
+            "comment_density": [],
+            "docstring_coverage": [],
+            "code_complexity": [],
+            "pep8_compliance": [],
+            # "output_correctness": 0
+        }
+        for code_block in preprocess_blocks:
+            # Evaluate code quality
+            code_metrics = evaluate_code_quality(code_block)
+            for key, value in code_metrics.items():
+                block_metrics[key].append(value)
 
-        generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+        # Evaluate functional correctness
+        execution_result = execute_code(full_script)
+        if execution_result["success"]:
+            metrics["execution_success_rate"] += 1
+            # if execution_result["output"] == example.get("expected_output", ""):
+            #     metrics["output_correctness"] += 1
+
+        # Averaging metrics across code blocks
+        for metric_name, metric_value in block_metrics.items():
+            if isinstance(metric_value, list):
+                filtered_values = list(filter(lambda x: x is not None, metric_value))
+                if filtered_values:
+                    metrics[metric_name].append(np.mean(filtered_values))
+            elif isinstance(metric_value, int):
+                metrics[metric_name] = metric_value / len(preprocess_blocks)
+            else:
+                raise ValueError("Metric type not recognized")
+            
+        # Compare with chosen code
+        chosen_code = example.get("chosen")
+        if chosen_code:
+            text_chosen_code = chosen_code[0]['content']
+            similarity_to_chosen = calculate_code_similarity(generated_code, text_chosen_code)
+        else:
+            similarity_to_chosen = None
+        metrics["similarity_to_chosen"].append(similarity_to_chosen)
+        
+        # Compare with rejected code
+        rejected_code = example.get("rejected")
+        if rejected_code:
+            text_rejected_code = rejected_code[0]['content']
+            similarity_to_rejected = calculate_code_similarity(generated_code, text_rejected_code)
+        else:
+            similarity_to_rejected = None
+        metrics["similarity_to_rejected"].append(similarity_to_rejected)
 
         # Save the results
         results.append(
             {
                 "prompt": prompt,
-                "generated": generated_text,
-                "chosen": example.get("chosen", ""),
-                "rejected": example.get("rejected", ""),
+                "generated_code": generated_code,
+                "preprocess_code_blocks": preprocess_blocks,
+                "chosen_code": chosen_code,
+                "rejected_code": rejected_code,
+                "code_block_metrics": block_metrics,
+                "execution_result": execution_result,
+                "similarity_to_chosen": similarity_to_chosen,
+                "similarity_to_rejected": similarity_to_rejected,
             }
         )
 
-    # Save results to a file
-    import json
+    # Calculate aggregate metrics
+    metrics["type_annotation_coverage"] = np.mean(metrics["type_annotation_coverage"])
+    metrics["comment_density"] = np.mean(metrics["comment_density"])
+    metrics["docstring_coverage"] = np.mean(metrics["docstring_coverage"])
+    metrics["code_complexity"] = np.mean(metrics["code_complexity"])
+    metrics["pep8_compliance"] = np.mean(metrics["pep8_compliance"])
+    metrics["execution_success_rate"] /= num_examples
+    # metrics["output_correctness"] /= num_examples
+    metrics["similarity_to_chosen"] = np.mean(metrics["similarity_to_chosen"])
+    metrics["similarity_to_rejected"] = np.mean(metrics["similarity_to_rejected"])
 
+    def convert_numpy(obj):
+        """Recursively convert NumPy types to Python native types."""
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()  # Convert NumPy array to Python list
+        elif isinstance(obj, np.generic):  
+            return obj.item()  # Convert NumPy scalars (e.g., np.float32, np.int64) to Python types
+        elif isinstance(obj, dict):
+            return {key: convert_numpy(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_numpy(item) for item in obj]
+        return obj  # Return as-is if no conversion is needed
+
+    # Convert all results and metrics
+    results = convert_numpy(results)
+    metrics = convert_numpy(metrics)
+
+    # Save results to a file
     with open(os.path.join(output_dir, "eval_results.json"), "w") as f:
-        json.dump(results, f, indent=2)
+        json.dump({"results": results, "metrics": metrics}, f, indent=2)
 
     print(
         f"Evaluation completed. Results saved to: {os.path.join(output_dir, 'eval_results.json')}"
