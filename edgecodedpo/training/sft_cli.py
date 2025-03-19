@@ -9,7 +9,7 @@ from rich.traceback import Traceback
 # We assume these are the same as in your existing CLI file
 from edgecodedpo.training.dpo import load_and_evaluate_model  # optional if you re-use some parts
 from edgecodedpo.training.sft import train_sft  # <-- Import your new SFT function here
-from edgecodedpo.config import settings  # or wherever you store your HF keys, etc.
+from edgecodedpo.config import settings 
 
 console = Console()
 

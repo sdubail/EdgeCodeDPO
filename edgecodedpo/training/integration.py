@@ -5,6 +5,7 @@ Integration of DPO training commands into the main CLI.
 import typer
 
 from edgecodedpo.training.cli import register_dpo_commands
+from edgecodedpo.training.sft_cli import register_sft_commands
 
 # Create a sub-app for training
 train_app = typer.Typer(
@@ -15,7 +16,7 @@ train_app = typer.Typer(
 
 # Register DPO commands
 register_dpo_commands(train_app)
-
+register_sft_commands(train_app)
 
 def register_training_commands(app: typer.Typer) -> None:
     """
