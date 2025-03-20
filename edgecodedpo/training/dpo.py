@@ -297,17 +297,20 @@ def load_and_evaluate_model(
     model_path: str,
     dataset_path: str,
     output_dir: str,
+    is_test: bool = False,
     max_length: int = 1024,
     num_examples: int = 10,
 ) -> None:
     """
     Load a trained model and evaluate it on the dataset.
-        Args:
-            model_path: Path to the trained model
-            dataset_path: Path to the dataset
-            output_dir: Directory to save the evaluation results
-            max_length: Maximum sequence length
-            num_examples: Number of examples to evaluate
+
+    Args:
+        model_path: Path to the trained model
+        dataset_path: Path to the dataset
+        output_dir: Directory to save the evaluation results
+        is_test: Whether the dataset is a test dataset with prompt types
+        max_length: Maximum sequence length
+        num_examples: Number of examples to evaluate
     """
     # Load model and tokenizer
     try:
@@ -358,7 +361,7 @@ def load_and_evaluate_model(
             range(min(num_examples, dataset["train"].num_rows))
         )
 
-    # Initialize metrics
+    # Initialize overall metrics dictionary
     metrics = {
         "type_annotation_coverage": [],
         "comment_density": [],
@@ -366,16 +369,38 @@ def load_and_evaluate_model(
         "code_complexity": [],
         "pep8_compliance": [],
         "execution_success_rate": 0,
-        # "output_correctness": 0,
         "similarity_to_chosen": [],
         "similarity_to_rejected": [],
     }
+
+    # Initialize metrics by prompt type dictionary if this is a test dataset
+    prompt_types_metrics = {}
+    prompt_types_counts = {}
 
     # Generate predictions and evaluate
     results = []
     for i, example in enumerate(eval_dataset):
         # Get prompt from the example
         prompt = example.get("prompt")
+        prompt_type = example.get("prompt_type") if is_test else "default"
+
+        # Initialize metrics for this prompt type if we haven't seen it before
+        if prompt_type and prompt_type not in prompt_types_metrics:
+            prompt_types_metrics[prompt_type] = {
+                "type_annotation_coverage": [],
+                "comment_density": [],
+                "docstring_coverage": [],
+                "code_complexity": [],
+                "pep8_compliance": [],
+                "execution_success_rate": 0,
+                "similarity_to_chosen": [],
+                "similarity_to_rejected": [],
+            }
+            prompt_types_counts[prompt_type] = 0
+
+        if prompt_type:
+            prompt_types_counts[prompt_type] += 1
+
         if prompt is None:
             continue
         else:
@@ -405,7 +430,6 @@ def load_and_evaluate_model(
             "docstring_coverage": [],
             "code_complexity": [],
             "pep8_compliance": [],
-            # "output_correctness": 0
         }
         for code_block in preprocess_blocks:
             # Evaluate code quality
@@ -417,19 +441,23 @@ def load_and_evaluate_model(
         execution_result = execute_code(full_script)
         if execution_result["success"]:
             metrics["execution_success_rate"] += 1
-            # if execution_result["output"] == example.get("expected_output", ""):
-            #     metrics["output_correctness"] += 1
+            if prompt_type:
+                prompt_types_metrics[prompt_type]["execution_success_rate"] += 1
 
         # Averaging metrics across code blocks
         for metric_name, metric_value in block_metrics.items():
             if isinstance(metric_value, list):
                 filtered_values = list(filter(lambda x: x is not None, metric_value))
                 if filtered_values:
-                    metrics[metric_name].append(np.mean(filtered_values))
+                    avg_value = np.mean(filtered_values)
+                    metrics[metric_name].append(avg_value)
+                    if prompt_type:
+                        prompt_types_metrics[prompt_type][metric_name].append(avg_value)
             elif isinstance(metric_value, int):
-                metrics[metric_name] = metric_value / len(preprocess_blocks)
-            else:
-                raise ValueError("Metric type not recognized")
+                avg_value = metric_value / len(preprocess_blocks)
+                metrics[metric_name] = avg_value
+                if prompt_type:
+                    prompt_types_metrics[prompt_type][metric_name] = avg_value
 
         # Compare with chosen code
         chosen_code = example.get("chosen")
@@ -438,9 +466,13 @@ def load_and_evaluate_model(
             similarity_to_chosen = calculate_code_similarity(
                 generated_code, text_chosen_code
             )
+            metrics["similarity_to_chosen"].append(similarity_to_chosen)
+            if prompt_type:
+                prompt_types_metrics[prompt_type]["similarity_to_chosen"].append(
+                    similarity_to_chosen
+                )
         else:
             similarity_to_chosen = None
-        metrics["similarity_to_chosen"].append(similarity_to_chosen)
 
         # Compare with rejected code
         rejected_code = example.get("rejected")
@@ -449,14 +481,19 @@ def load_and_evaluate_model(
             similarity_to_rejected = calculate_code_similarity(
                 generated_code, text_rejected_code
             )
+            metrics["similarity_to_rejected"].append(similarity_to_rejected)
+            if prompt_type:
+                prompt_types_metrics[prompt_type]["similarity_to_rejected"].append(
+                    similarity_to_rejected
+                )
         else:
             similarity_to_rejected = None
-        metrics["similarity_to_rejected"].append(similarity_to_rejected)
 
         # Save the results
         results.append(
             {
                 "prompt": prompt,
+                "prompt_type": prompt_type,
                 "generated_code": generated_code,
                 "preprocess_code_blocks": preprocess_blocks,
                 "chosen_code": chosen_code,
@@ -468,16 +505,29 @@ def load_and_evaluate_model(
             }
         )
 
-    # Calculate aggregate metrics
-    metrics["type_annotation_coverage"] = np.mean(metrics["type_annotation_coverage"])
-    metrics["comment_density"] = np.mean(metrics["comment_density"])
-    metrics["docstring_coverage"] = np.mean(metrics["docstring_coverage"])
-    metrics["code_complexity"] = np.mean(metrics["code_complexity"])
-    metrics["pep8_compliance"] = np.mean(metrics["pep8_compliance"])
-    metrics["execution_success_rate"] /= num_examples
-    # metrics["output_correctness"] /= num_examples
-    metrics["similarity_to_chosen"] = np.mean(metrics["similarity_to_chosen"])
-    metrics["similarity_to_rejected"] = np.mean(metrics["similarity_to_rejected"])
+    # Calculate aggregate metrics for overall results
+    aggregated_metrics = {}
+    for key in metrics:
+        if key == "execution_success_rate":
+            aggregated_metrics[key] = metrics[key] / len(eval_dataset)
+        elif len(metrics[key]) > 0:
+            aggregated_metrics[key] = np.mean(metrics[key])
+        else:
+            aggregated_metrics[key] = None
+
+    # Calculate aggregate metrics for each prompt type
+    aggregated_prompt_type_metrics = {}
+    for p_type, p_metrics in prompt_types_metrics.items():
+        aggregated_prompt_type_metrics[p_type] = {}
+        for key in p_metrics:
+            if key == "execution_success_rate":
+                aggregated_prompt_type_metrics[p_type][key] = (
+                    p_metrics[key] / prompt_types_counts[p_type]
+                )
+            elif len(p_metrics[key]) > 0:
+                aggregated_prompt_type_metrics[p_type][key] = np.mean(p_metrics[key])
+            else:
+                aggregated_prompt_type_metrics[p_type][key] = None
 
     def convert_numpy(obj):
         """Recursively convert NumPy types to Python native types."""
@@ -495,12 +545,32 @@ def load_and_evaluate_model(
 
     # Convert all results and metrics
     results = convert_numpy(results)
-    metrics = convert_numpy(metrics)
+    aggregated_metrics = convert_numpy(aggregated_metrics)
+    aggregated_prompt_type_metrics = convert_numpy(aggregated_prompt_type_metrics)
 
     # Save results to a file
     with open(os.path.join(output_dir, "eval_results.json"), "w") as f:
-        json.dump({"results": results, "metrics": metrics}, f, indent=2)
+        json.dump(
+            {
+                "results": results,
+                "metrics": aggregated_metrics,
+                "prompt_type_metrics": aggregated_prompt_type_metrics,
+            },
+            f,
+            indent=2,
+        )
 
+    # Print summary of evaluation results
     print(
         f"Evaluation completed. Results saved to: {os.path.join(output_dir, 'eval_results.json')}"
     )
+    print("\nOverall metrics:")
+    for key, value in aggregated_metrics.items():
+        print(f"  {key}: {value}")
+
+    if aggregated_prompt_type_metrics:
+        print("\nMetrics by prompt type:")
+        for prompt_type, metrics in aggregated_prompt_type_metrics.items():
+            print(f"\n  Prompt type: {prompt_type}")
+            for key, value in metrics.items():
+                print(f"    {key}: {value}")

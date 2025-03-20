@@ -408,6 +408,9 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "-d",
             help="Path to the evaluation dataset",
         ),
+        is_test: bool = typer.Option(
+            False, "--test", "-t", help="Is the dataset for training or test purposes"
+        ),
         output_dir: str = typer.Option(
             "edgecodedpo/models/evaluation",
             "--output",
@@ -443,6 +446,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
             load_and_evaluate_model(
                 model_path=model_path,
                 dataset_path=dataset_path,
+                is_test=is_test,
                 output_dir=output_dir,
                 num_examples=num_examples,
             )
