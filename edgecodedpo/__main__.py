@@ -44,6 +44,9 @@ def generate(
     is_test: bool = typer.Option(
         False, "--test", "-t", help="Is the dataset for training or test purposes"
     ),
+    is_header: bool = typer.Option(
+        False, "--header", "-h", help="Is the dataset in headers only or full code mode"
+    ),
     samples: int | None = typer.Option(
         None,
         "--samples",
@@ -109,6 +112,7 @@ def generate(
                 config_file=config,
                 output_path=output,
                 is_test=is_test,
+                is_header=is_header,
                 num_samples=samples,
                 batch_size=batch_size,
                 openai_model=model,

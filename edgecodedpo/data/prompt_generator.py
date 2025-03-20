@@ -40,7 +40,7 @@ def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def create_first_stage_prompt(
-    combination: dict[str, Any], is_test: bool = False
+    combination: dict[str, Any], is_test: bool = False, is_header: bool = False
 ) -> str:
     """
     Creates a JSON-oriented prompt template for the first stage (simple code examples).
@@ -53,7 +53,8 @@ def create_first_stage_prompt(
     libraries_str = ", ".join(libraries)
 
     if not is_test:
-        prompt = f"""Generate 3 very different and specific Python code examples, one for each code form in the list : {code_forms}, that address the task: "{task}" in the {domain} domain.
+        if not is_header:
+            prompt = f"""Generate 3 very different and specific Python code examples, one for each code form in the list : {code_forms}, that address the task: "{task}" in the {domain} domain.
 
 You can use one or more of these libraries: {libraries_str}.
 
@@ -78,9 +79,34 @@ Remember that each example should correspond to a distinct use case for a distin
 Even if the task is already precise, find a way to propose 3 ideas that are significantly different from each other for the sake of diversity.
 On the other hand, if the task is too broad/big, imagine an example that solves only a specific part of it.
 """
+        else:
+            prompt = f"""Generate 3 very different and specific Python function headers, one for each code form in the list : {code_forms}, to address the task: "{task}" in the {domain} domain.
 
+You can use one or more of these libraries: {libraries_str}.
+
+For each example:
+1. Create a SPECIFIC and UNIQUE use case in this domain (be precise about the context and needs, but stay concise).
+2. Generate ONLY the function header including the function name and parameters - NO implementation code, besides the necessary imports. For classes, we also want the init function header inside. 
+Make the header BASIC: absolutely no type annotations, no docstrings.
+3. Provide a simple prompt that could be used by a human to ask another AI model to generate the function header for the use case. 
+The prompt part very important and shouldn't be neglected. The prompt should mention that ONLY the function header is requested, and also briefly mention the use case like a human would.
+It shouldn't specify too much the details about the header parameters and/or function name (which a human wouldn't do), and stay elusive, for instance : "can you code me the header of a function (or any code form) for <use_case>". This is just an example, please do your own prompts and have variations ! 
+
+Your response must be a valid JSON object with the following structure:
+{{
+  "headers": [
+    {{
+    "use_case": "Detailed description of the use case",
+    "header": "imports, and simple header, like def function_name(param1, param2):"
+    "prompt": "Simple prompt to generate this code"
+    }}
+    ... (repeat for all 3 headers)
+  ]
+}}
+"""
     else:
-        prompt = f"""Generate a Python code example that uses the {code_forms} approach to address the task: "{task}" in the {domain} domain.
+        if not is_header:
+            prompt = f"""Generate a Python code example that uses the {code_forms} approach to address the task: "{task}" in the {domain} domain.
 
 You can use one or more of these libraries: {libraries_str}.
 
@@ -95,12 +121,16 @@ Your response must be a valid JSON object with the following structure:
 
 Remember to make the code targeted, practical, and directly address the task without superfluous elements.
 """
-
+        else:
+            raise ValueError("No test dataset with header only mode.")
     return prompt
 
 
 def create_second_stage_prompt(
-    first_response: dict[str, Any], combination: dict[str, Any], is_test: bool = False
+    first_response: dict[str, Any],
+    combination: dict[str, Any],
+    is_test: bool = False,
+    is_header: bool = False,
 ) -> str:
     """
     Creates a prompt for the second stage (fully typed, commented, high-quality code).
@@ -119,16 +149,17 @@ def create_second_stage_prompt(
     code_form = combination["code_form"]
 
     if not is_test:
-        # Extract the examples from the first response
-        examples = first_response.get("examples", [])
+        if not is_header:
+            # Extract the examples from the first response
+            examples = first_response.get("examples", [])
 
-        # Create a JSON-ready array of the original code examples
-        code_examples_json = json.dumps(
-            [{"use_case": ex["use_case"], "code": ex["code"]} for ex in examples],
-            indent=2,
-        )
+            # Create a JSON-ready array of the original code examples
+            code_examples_json = json.dumps(
+                [{"use_case": ex["use_case"], "code": ex["code"]} for ex in examples],
+                indent=2,
+            )
 
-        prompt = f"""I have a set of Python code examples in the {domain} domain that address the task: "{task}" using the {code_form} approach. 
+            prompt = f"""I have a set of Python code examples in the {domain} domain that address the task: "{task}" using the {code_form} approach. 
 These examples were written to be minimal and straightforward.
 
 Now I need you to rewrite each example with:
@@ -139,6 +170,8 @@ Now I need you to rewrite each example with:
 
 Here are the original examples:
 {code_examples_json}
+
+Remember that you can use the following libraries : {libraries}.
 
 Please respond with a valid JSON object with the following structure:
 {{
@@ -153,16 +186,60 @@ Please respond with a valid JSON object with the following structure:
 }}
 
 Make sure your improved code demonstrates Python expertise while maintaining the exact functionality of the original code. Focus on adding types, documentation, and improving code quality without changing the core logic or functionality."""
+        else:
+            # Extract the headers from the first response
+            headers = first_response.get("headers", [])
+
+            # Create a JSON-ready array of the original headers
+            headers_json = json.dumps(
+                [
+                    {"use_case": ex["use_case"], "header": ex["header"]}
+                    for ex in headers
+                ],
+                indent=2,
+            )
+
+            prompt = f"""I have a set of Python function headers in the {domain} domain that address the task: "{task}" using the {code_form} approach. 
+These headers were written to be minimal and straightforward. For classes we also have the header of the init method.
+
+Now I need you to rewrite each header with:
+1. Proper mypy type annotations for all parameters and return values
+2. Comprehensive docstrings explaining:
+   - The function's purpose
+   - Each parameter (with types)
+   - Return value (with type)
+   - Any raised exceptions
+3. Improved naming and parameter structure following Python best practices
+
+Here are the original headers:
+{headers_json}
+
+Please respond with a valid JSON object with the following structure:
+{{
+  "improved_headers": [
+    {{
+      "use_case": "The original use case description",
+      "original_header": "The original header",
+      "improved_header": "Your improved, typed, and documented header"
+    }},
+    ... (repeat for all headers)
+  ]
+}}
+
+Make sure your improved headers demonstrate Python expertise with excellent type annotations and documentation. Do not include implementation code, focus only on creating exemplary function or class headers. Do not forget docstrings for classes too !"""
 
     else:
-        # Extract the example from the first response
-        use_case = first_response.get("use_case", "")
-        code = first_response.get("code", "")
+        if not is_header:
+            # Extract the example from the first response
+            use_case = first_response.get("use_case", "")
+            code = first_response.get("code", "")
 
-        # Create a JSON-ready representation of the original code example
-        code_example_json = json.dumps({"use_case": use_case, "code": code}, indent=2)
+            # Create a JSON-ready representation of the original code example
+            code_example_json = json.dumps(
+                {"use_case": use_case, "code": code}, indent=2
+            )
 
-        prompt = f"""I have a Python code example in the {domain} domain that addresses the task: "{task}" using the {code_form} approach. 
+            prompt = f"""I have a Python code example in the {domain} domain that addresses the task: "{task}" using the {code_form} approach. 
 This example was written to be minimal and straightforward.
 
 Now I need you to rewrite the example with:
@@ -190,7 +267,8 @@ Please respond with a valid JSON object with the following structure:
 }}
 
 Make sure your improved code demonstrates Python expertise while maintaining the exact functionality of the original code. Focus on adding types, documentation, and improving code quality without changing the core logic or functionality."""
-
+        else:
+            raise ValueError("No test dataset with header only mode.")
     return prompt
 
 

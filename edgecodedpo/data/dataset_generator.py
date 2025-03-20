@@ -26,6 +26,7 @@ async def process_combination(
     combination: dict[str, Any],
     system_message: str | None = None,
     is_test: bool = False,
+    is_header: bool = False,
 ) -> dict[str, Any]:
     """
     Process a single combination through both stages of the pipeline.
@@ -35,12 +36,15 @@ async def process_combination(
         combination: The domain/task/libraries/code_form combination
         system_message: Optional system message for the OpenAI API
         is_test: is the dataset generated for test or train purposes
+        is_header: is the dataset in headers only or full code mode
 
     Returns:
         A dictionary with the results of both stages
     """
     # Create the first stage prompt
-    first_stage_prompt = create_first_stage_prompt(combination, is_test=is_test)
+    first_stage_prompt = create_first_stage_prompt(
+        combination, is_test=is_test, is_header=is_header
+    )
 
     # Call the OpenAI API for the first stage
     messages = []
@@ -65,7 +69,7 @@ async def process_combination(
 
         # Create the second stage prompt
         second_stage_prompt = create_second_stage_prompt(
-            first_parsed, combination, is_test=is_test
+            first_parsed, combination, is_test=is_test, is_header=is_header
         )
 
         # Call the OpenAI API for the second stage
@@ -134,6 +138,7 @@ async def process_batch(
     batch_size: int = 5,
     system_message: str | None = None,
     is_test: bool = False,
+    is_header: bool = False,
 ) -> list[dict[str, Any]]:
     """
     Process a batch of combinations with controlled concurrency.
@@ -144,6 +149,7 @@ async def process_batch(
         batch_size: Maximum number of concurrent requests
         system_message: Optional system message for the OpenAI API
         is_test: Is the dataset generated for test or train purposes
+        is_header: Is the dataset in headers only or full code mode
 
     Returns:
         List of results for each combination
@@ -160,6 +166,7 @@ async def process_batch(
                 combination=combination,
                 system_message=system_message,
                 is_test=is_test,
+                is_header=is_header,
             )
             results.append(result)
             return result
@@ -170,12 +177,15 @@ async def process_batch(
     return results
 
 
-def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[Any]]:
+def convert_to_dataset_format(
+    results: list[dict[str, Any]], is_header: bool = False
+) -> dict[str, list[Any]]:
     """
     Convert the API results to the HuggingFace dataset format.
 
     Args:
         results: List of results from the API calls
+        is_header: Is the dataset in headers only or full code mode
 
     Returns:
         Dictionary with "prompt", "chosen", and "rejected" columns for HuggingFace dataset,
@@ -204,17 +214,30 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
         first_stage = result["first_stage"]
         second_stage = result["second_stage"]
 
-        first_examples = first_stage["parsed_response"].get("examples", [])
-        second_examples = second_stage["parsed_response"].get("improved_examples", [])
+        if not is_header:
+            original_main_key = "examples"
+            improved_main_key = "improved_examples"
+            original_key = "original_code"
+            improved_key = "improved_code"
+            base_key = "code"
+        else:
+            original_main_key = "headers"
+            improved_main_key = "improved_headers"
+            original_key = "original_header"
+            improved_key = "improved_header"
+            base_key = "header"
+
+        first_examples = first_stage["parsed_response"].get(original_main_key, [])
+        second_examples = second_stage["parsed_response"].get(improved_main_key, [])
 
         # Process examples to create prompt-chosen-rejected format
         for example in second_examples:
             # Find corresponding first-stage example to get the prompt
-            original_code = example.get("original_code", "")
+            original_code = example.get(original_key, "")
             corresponding_prompt = ""
 
             for first_example in first_examples:
-                if first_example.get("code", "") == original_code:
+                if first_example.get(base_key, "") == original_code:
                     corresponding_prompt = first_example.get("prompt", "")
                     break
 
@@ -225,7 +248,7 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
             # Format the data in the expected conversational format
             prompt_message = [{"role": "user", "content": corresponding_prompt}]
             chosen_message = [
-                {"role": "assistant", "content": example.get("improved_code", "")}
+                {"role": "assistant", "content": example.get(improved_key, "")}
             ]
             rejected_message = [{"role": "assistant", "content": original_code}]
 
@@ -318,6 +341,7 @@ async def generate_dataset(
     config_file: str,
     output_path: str,
     is_test: bool = False,
+    is_header: bool = False,
     num_samples: int | None = None,
     batch_size: int = 5,
     openai_model: str = "gpt-4o",
@@ -330,6 +354,8 @@ async def generate_dataset(
     Args:
         config_file: Path to the configuration file
         output_path: Path to save the HuggingFace dataset
+        is_test : Is the dataset on test mode or train mode
+        is_header : Is the dataset on headers only mode or full code mode
         num_samples: Number of combinations to sample (None for all)
         batch_size: Number of concurrent API requests
         openai_model: OpenAI model to use
@@ -366,6 +392,7 @@ async def generate_dataset(
         batch_size=batch_size,
         system_message=system_message,
         is_test=is_test,
+        is_header=is_header,
     )
 
     # Save intermediate results if requested
@@ -380,7 +407,7 @@ async def generate_dataset(
 
     # Convert to dataset format
     if not is_test:
-        dataset_dict = convert_to_dataset_format(results)
+        dataset_dict = convert_to_dataset_format(results, is_header=is_header)
     else:
         dataset_dict = convert_to_test_dataset_format(results)
 
