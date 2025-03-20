@@ -75,8 +75,8 @@ def preprocess_sft_dataset(
     # Or you can just use 'chosen' alone if your data is already prompt+answer.
 
     def build_text(example):
-        prompt = example.get("prompt", "")
-        chosen = example.get("chosen", "")
+        prompt = example.get("prompt", "")[0]["content"]
+        chosen = example.get("chosen", "")[0]["content"]
         if isinstance(chosen, list):
             # If 'chosen' is a list of messages or strings, you might need to join them
             # or pick the last message, etc. For simplicity, assume a single string.
@@ -164,7 +164,7 @@ def train_sft(
     # or whichever file your load_model_and_tokenizer is defined in
     model, tokenizer = load_model_and_tokenizer(
         model_name_or_path=model_name_or_path,
-        dpo_config=DPOConfig(),  # We won't really use it for SFT, but we keep the signature
+        dpo_config=DPOConfig(output_dir=output_dir),  # We won't really use it for SFT, but we keep the signature
         quantization_config=quantization_config,
         lora_config=lora_config,
     )
