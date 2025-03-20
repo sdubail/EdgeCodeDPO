@@ -7,3 +7,4 @@ edgecodedpo.egg-info
 **/.DS_Store
 **/models
 **/metric_plots
+**/dataset_[0-9].*

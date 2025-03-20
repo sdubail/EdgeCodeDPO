@@ -10,14 +10,13 @@ import yaml
 from datasets import Dataset, load_dataset, load_from_disk
 from huggingface_hub import HfApi, login
 from tqdm import tqdm
-from transformers import AutoTokenizer, PreTrainedTokenizerBase
+from transformers import AutoTokenizer
 
 from edgecodedpo.clients.openai_client import OpenAIAsyncClient
 from edgecodedpo.config import settings
 from edgecodedpo.data.prompt_generator import (
     create_first_stage_prompt,
     create_second_stage_prompt,
-    format_conversation_pair,
     generate_combinations,
 )
 
@@ -26,6 +25,7 @@ async def process_combination(
     client: OpenAIAsyncClient,
     combination: dict[str, Any],
     system_message: str | None = None,
+    is_test: bool = False,
 ) -> dict[str, Any]:
     """
     Process a single combination through both stages of the pipeline.
@@ -34,12 +34,13 @@ async def process_combination(
         client: The OpenAI client instance
         combination: The domain/task/libraries/code_form combination
         system_message: Optional system message for the OpenAI API
+        is_test: is the dataset generated for test or train purposes
 
     Returns:
         A dictionary with the results of both stages
     """
     # Create the first stage prompt
-    first_stage_prompt = create_first_stage_prompt(combination)
+    first_stage_prompt = create_first_stage_prompt(combination, is_test=is_test)
 
     # Call the OpenAI API for the first stage
     messages = []
@@ -63,7 +64,9 @@ async def process_combination(
         first_parsed = json.loads(first_content)
 
         # Create the second stage prompt
-        second_stage_prompt = create_second_stage_prompt(first_parsed, combination)
+        second_stage_prompt = create_second_stage_prompt(
+            first_parsed, combination, is_test=is_test
+        )
 
         # Call the OpenAI API for the second stage
         messages = []
@@ -130,6 +133,7 @@ async def process_batch(
     combinations: list[dict[str, Any]],
     batch_size: int = 5,
     system_message: str | None = None,
+    is_test: bool = False,
 ) -> list[dict[str, Any]]:
     """
     Process a batch of combinations with controlled concurrency.
@@ -139,6 +143,7 @@ async def process_batch(
         combinations: List of combinations to process
         batch_size: Maximum number of concurrent requests
         system_message: Optional system message for the OpenAI API
+        is_test: Is the dataset generated for test or train purposes
 
     Returns:
         List of results for each combination
@@ -151,7 +156,10 @@ async def process_batch(
     ) -> dict[str, Any]:
         async with semaphore:
             result = await process_combination(
-                client=client, combination=combination, system_message=system_message
+                client=client,
+                combination=combination,
+                system_message=system_message,
+                is_test=is_test,
             )
             results.append(result)
             return result
@@ -234,9 +242,82 @@ def convert_to_dataset_format(results: list[dict[str, Any]]) -> dict[str, list[A
     return dataset_dict
 
 
+def convert_to_test_dataset_format(
+    results: list[dict[str, Any]],
+) -> dict[str, list[Any]]:
+    """
+    Convert the API results to the HuggingFace dataset format for testing.
+    Creates multiple rows for each example, one for each prompt type.
+
+    Args:
+        results: List of results from the API calls
+
+    Returns:
+        Dictionary ready for creating a HuggingFace dataset
+    """
+    dataset_dict: dict[str, list[Any]] = {
+        "prompt": [],
+        "chosen": [],
+        "rejected": [],
+        "domain": [],
+        "task": [],
+        "code_form": [],
+        "prompt_type": [],
+    }
+
+    for result in results:
+        if "error" in result:
+            print(f"Skipping result with error: {result['error']}")
+            continue
+
+        # Extract combination metadata
+        combination = result["combination"]
+        domain = combination["domain"]
+        task = combination["task"]
+        code_form = combination["code_form"][0]  # Just one code form per task
+
+        second_stage = result["second_stage"]
+        processed_response = second_stage["parsed_response"]
+
+        # Get the improved and original code
+        improved_code = processed_response.get("improved_code", "")
+        original_code = processed_response.get("original_code", "")
+
+        # For each prompt type, create a separate dataset entry
+        prompt_types = [
+            ("prompt_default", "default"),
+            ("prompt_code_form", "code_form"),
+            ("prompt_code_form_types", "code_form_types"),
+        ]
+
+        for prompt_field, prompt_type in prompt_types:
+            prompt_text = processed_response.get(prompt_field, "")
+            if not prompt_text:
+                continue
+
+            # Format the data in the expected conversational format
+            prompt_message = [{"role": "user", "content": prompt_text}]
+            chosen_message = [{"role": "assistant", "content": improved_code}]
+            rejected_message = [{"role": "assistant", "content": original_code}]
+
+            # Add to dataset
+            dataset_dict["prompt"].append(prompt_message)
+            dataset_dict["chosen"].append(chosen_message)
+            dataset_dict["rejected"].append(rejected_message)
+
+            # Add metadata
+            dataset_dict["domain"].append(domain)
+            dataset_dict["task"].append(task)
+            dataset_dict["code_form"].append(code_form)
+            dataset_dict["prompt_type"].append(prompt_type)
+
+    return dataset_dict
+
+
 async def generate_dataset(
     config_file: str,
     output_path: str,
+    is_test: bool = False,
     num_samples: int | None = None,
     batch_size: int = 5,
     openai_model: str = "gpt-4o",
@@ -255,6 +336,9 @@ async def generate_dataset(
         system_message: Optional system message for the API
         save_intermediate: Whether to save intermediate results
     """
+    if is_test:
+        output_path += "_test"
+
     # Load the configuration
     with open(config_file) as file:
         config = yaml.safe_load(file)
@@ -281,6 +365,7 @@ async def generate_dataset(
         combinations=sampled_combinations,
         batch_size=batch_size,
         system_message=system_message,
+        is_test=is_test,
     )
 
     # Save intermediate results if requested
@@ -294,19 +379,13 @@ async def generate_dataset(
         print(f"Saved intermediate results to {intermediate_path}")
 
     # Convert to dataset format
-    dataset_dict = convert_to_dataset_format(results)
+    if not is_test:
+        dataset_dict = convert_to_dataset_format(results)
+    else:
+        dataset_dict = convert_to_test_dataset_format(results)
 
     # Create and save the HuggingFace dataset
-    dataset = Dataset.from_dict(
-        {
-            "prompt": dataset_dict["prompt"],
-            "rejected": dataset_dict["rejected"],
-            "chosen": dataset_dict["chosen"],
-            "domain": dataset_dict["domain"],
-            "task": dataset_dict["task"],
-            "code_form": dataset_dict["code_form"],
-        }
-    )
+    dataset = Dataset.from_dict(dataset_dict)
 
     # Save the dataset
     dataset_path = os.path.join(output_path, "dataset")

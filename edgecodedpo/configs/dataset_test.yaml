@@ -1,0 +1,512 @@
+# === DATA PROCESSING ===
+data processing:
+  libraries:
+    - pandas
+    - numpy
+    - dask
+    - polars
+    - pyjanitor
+  tasks:
+    - name: Implement a time series resampler with custom aggregation functions
+      code_forms:
+        - utility function
+    
+    - name: Create a dataframe cleaner for handling missing values with customizable strategies
+      code_forms:
+        - processor class
+    
+    - name: Build a data validation pipeline with schema enforcement
+      code_forms:
+        - validator class
+    
+    - name: Develop a dataset merger function with conflict resolution strategies
+      code_forms:
+        - utility function
+
+# === TEXT PROCESSING ===
+text processing:
+  libraries:
+    - nltk
+    - spacy
+    - transformers
+    - gensim
+    - regex
+    - textblob
+  tasks:
+    - name: Build a named entity recognition system with custom entity types
+      code_forms:
+        - processor class
+    
+    - name: Implement a text summarization function with length control
+      code_forms:
+        - utility function
+    
+    - name: Create a sentiment analysis class with multiple algorithm options
+      code_forms:
+        - analyzer class
+    
+    - name: Develop a text normalization function with configurable steps
+      code_forms:
+        - utility function
+
+# === WEB DEVELOPMENT ===
+web development:
+  libraries:
+    - flask
+    - fastapi
+    - django
+    - requests
+    - httpx
+    - starlette
+    - pydantic
+    - jwt
+  tasks:
+    - name: Create a request middleware for authentication and rate limiting
+      code_forms:
+        - middleware class
+    
+    - name: Implement a response caching decorator with TTL control
+      code_forms:
+        - decorator function
+    
+    - name: Build a request validation class with customizable rule sets
+      code_forms:
+        - validator class
+    
+    - name: Develop an API client function with automatic retries
+      code_forms:
+        - utility function
+
+# === DATABASE ===
+database:
+  libraries:
+    - sqlalchemy
+    - psycopg2
+    - pymongo
+    - redis
+    - peewee
+    - alembic
+    - mongodb
+  tasks:
+    - name: Build a database connection pool manager with health checks
+      code_forms:
+        - manager class
+    
+    - name: Implement a query builder with parameterized filters
+      code_forms:
+        - builder class
+    
+    - name: Create a database migration function with schema versioning
+      code_forms:
+        - utility function
+    
+    - name: Develop a data access object class with CRUD operations
+      code_forms:
+        - dao class
+
+# === MATHEMATICS AND SCIENTIFIC COMPUTING ===
+mathematics and scientific computing:
+  libraries:
+    - numpy
+    - scipy
+    - sympy
+    - statsmodels
+    - matplotlib
+    - mpmath
+    - sklearn
+  tasks:
+    - name: Create a numerical integration function with error estimation
+      code_forms:
+        - utility function
+    
+    - name: Implement a matrix operation class with optimized algorithms
+      code_forms:
+        - computational class
+    
+    - name: Build a statistical hypothesis testing function with multiple methods
+      code_forms:
+        - utility function
+    
+    - name: Develop a differential equation solver class with various algorithms
+      code_forms:
+        - solver class
+
+# === IMAGE PROCESSING ===
+image processing:
+  libraries:
+    - pillow
+    - opencv-python
+    - scikit-image
+    - imageio
+    - pytesseract
+    - torchvision
+  tasks:
+    - name: Build an image transformation pipeline with multiple filters
+      code_forms:
+        - processor class
+    
+    - name: Implement a feature extraction function for image classification
+      code_forms:
+        - utility function
+    
+    - name: Create an image segmentation class with different algorithms
+      code_forms:
+        - segmenter class
+    
+    - name: Develop a color correction function with various balancing methods
+      code_forms:
+        - utility function
+
+# === CLASSIC ALGORITHMS ===
+classic algorithms:
+  libraries:
+    - collections
+    - heapq
+    - bisect
+    - sortedcontainers
+    - networkx
+    - itertools
+  tasks:
+    - name: Create a priority queue implementation with customizable priority functions
+      code_forms:
+        - data structure class
+    
+    - name: Implement a graph traversal algorithm with custom visitor pattern
+      code_forms:
+        - algorithm function
+    
+    - name: Build a dynamic programming solution function with memoization
+      code_forms:
+        - utility function
+    
+    - name: Develop a trie data structure class for efficient string operations
+      code_forms:
+        - data structure class
+
+# === MACHINE LEARNING ===
+machine learning:
+  libraries:
+    - scikit-learn
+    - tensorflow
+    - pytorch
+    - xgboost
+    - lightgbm
+    - keras
+    - optuna
+  tasks:
+    - name: Build a feature selection class with multiple evaluation metrics
+      code_forms:
+        - selector class
+    
+    - name: Implement a model evaluation function with cross-validation and various metrics
+      code_forms:
+        - evaluation function
+    
+    - name: Create a hyperparameter optimization class with multiple search strategies
+      code_forms:
+        - optimizer class
+    
+    - name: Develop a data preprocessing pipeline function with scaling and encoding
+      code_forms:
+        - utility function
+
+# === AUTOMATION AND SYSTEM ===
+automation and system:
+  libraries:
+    - subprocess
+    - pathlib
+    - watchdog
+    - fabric
+    - psutil
+    - schedule
+    - asyncio
+  tasks:
+    - name: Create a file monitoring system with custom event handlers
+      code_forms:
+        - monitor class
+    
+    - name: Implement a resource usage tracker for system processes
+      code_forms:
+        - tracker function
+    
+    - name: Build a task scheduling class with dependency resolution
+      code_forms:
+        - scheduler class
+    
+    - name: Develop a command execution function with timeout and retry logic
+      code_forms:
+        - utility function
+
+# === DEVOPS AND CI/CD ===
+devops and CI/CD:
+  libraries:
+    - docker
+    - pytest
+    - ansible
+    - fabric
+    - prometheus-client
+    - jenkins
+    - kubernetes
+  tasks:
+    - name: Build a deployment verification system with health checks
+      code_forms:
+        - verifier class
+    
+    - name: Implement a configuration validation function with custom rules
+      code_forms:
+        - validator function
+    
+    - name: Create a metrics collection class with alerting thresholds
+      code_forms:
+        - collector class
+    
+    - name: Develop an infrastructure-as-code testing function
+      code_forms:
+        - tester function
+
+# === WEB SCRAPING ===
+web scraping:
+  libraries:
+    - beautifulsoup4
+    - scrapy
+    - selenium
+    - requests
+    - playwright
+    - httpx
+    - aiohttp
+  tasks:
+    - name: Create a web crawler with politeness controls and rate limiting
+      code_forms:
+        - crawler class
+    
+    - name: Implement a content extraction function with configurable selectors
+      code_forms:
+        - extractor function
+    
+    - name: Build a proxy rotation class with validation and fallback
+      code_forms:
+        - manager class
+    
+    - name: Develop a data cleaning function for scraped HTML content
+      code_forms:
+        - utility function
+
+# === FINANCE AND ECONOMICS ===
+finance and economics:
+  libraries:
+    - pandas
+    - numpy
+    - scipy
+    - statsmodels
+    - pyfolio
+    - quantlib-python
+    - yfinance
+  tasks:
+    - name: Build a portfolio risk analyzer with multiple risk metrics
+      code_forms:
+        - analyzer class
+    
+    - name: Implement a stock price prediction function using time series models
+      code_forms:
+        - prediction function
+    
+    - name: Create an options pricing class with different models
+      code_forms:
+        - calculator class
+    
+    - name: Develop a financial ratio analysis function with industry comparisons
+      code_forms:
+        - utility function
+
+# === GAMES AND SIMULATION ===
+games and simulation:
+  libraries:
+    - pygame
+    - numpy
+    - pymunk
+    - gymnasium
+    - pettingzoo
+    - noise
+    - networkx
+  tasks:
+    - name: Create a physics-based collision detection system
+      code_forms:
+        - physics class
+    
+    - name: Implement a procedural terrain generation algorithm
+      code_forms:
+        - generator function
+    
+    - name: Build a game state management class with save/load functionality
+      code_forms:
+        - state manager class
+    
+    - name: Develop a pathfinding function with multiple algorithms
+      code_forms:
+        - utility function
+
+# === API AND SERVICE INTEGRATION ===
+api and integration:
+  libraries:
+    - requests
+    - httpx
+    - aiohttp
+    - pydantic
+    - tenacity
+    - backoff
+    - marshmallow
+  tasks:
+    - name: Build a resilient API client with retry logic and circuit breaking
+      code_forms:
+        - client class
+    
+    - name: Implement a request validation function with schema checking
+      code_forms:
+        - validator function
+    
+    - name: Create a service discovery class with health checking
+      code_forms:
+        - discovery class
+    
+    - name: Develop a response parsing function with error handling
+      code_forms:
+        - utility function
+
+# === IOT AND EMBEDDED SYSTEMS ===
+iot and embedded systems:
+  libraries:
+    - paho-mqtt
+    - pyserial
+    - gpiozero
+    - adafruit-io
+    - influxdb
+    - pika
+    - bleak
+  tasks:
+    - name: Create a sensor data collection and processing system
+      code_forms:
+        - collector class
+    
+    - name: Implement a message routing function for IoT devices
+      code_forms:
+        - router function
+    
+    - name: Build a device connection management class with auto-discovery
+      code_forms:
+        - manager class
+    
+    - name: Develop a time series data storage function with efficient compression
+      code_forms:
+        - utility function
+
+# === BIOINFORMATICS ===
+bioinformatics:
+  libraries:
+    - biopython
+    - numpy
+    - pandas
+    - scikit-bio
+    - biotite
+    - dendropy
+    - pysam
+    - mygene
+  tasks:
+    - name: Build a sequence alignment and comparison system
+      code_forms:
+        - aligner class
+    
+    - name: Implement a gene expression analysis function
+      code_forms:
+        - analyzer function
+    
+    - name: Create a phylogenetic tree construction class with multiple methods
+      code_forms:
+        - tree builder class
+    
+    - name: Develop a protein structure prediction function
+      code_forms:
+        - utility function
+
+# === CYBERSECURITY ===
+cybersecurity:
+  libraries:
+    - cryptography
+    - scapy
+    - pycryptodome
+    - pyopenssl
+    - owasp-zap
+    - requests-security
+    - bandit
+    - paramiko
+  tasks:
+    - name: Create a secure password management system with encryption
+      code_forms:
+        - manager class
+    
+    - name: Implement a network traffic analysis function for detecting anomalies
+      code_forms:
+        - analyzer function
+    
+    - name: Build a security scanning class for vulnerability detection
+      code_forms:
+        - scanner class
+    
+    - name: Develop a data encryption function with key rotation
+      code_forms:
+        - utility function
+
+# === AUDIO PROCESSING ===
+audio processing:
+  libraries:
+    - librosa
+    - pydub
+    - pyaudio
+    - soundfile
+    - scipy
+    - pedalboard
+    - aubio
+    - madmom
+  tasks:
+    - name: Build an audio feature extraction system for classification
+      code_forms:
+        - extractor class
+    
+    - name: Implement a signal processing function for noise reduction
+      code_forms:
+        - processor function
+    
+    - name: Create a beat detection class with tempo estimation
+      code_forms:
+        - detector class
+    
+    - name: Develop an audio effects application function with multiple transformations
+      code_forms:
+        - utility function
+
+# === GEOSPATIAL ANALYSIS ===
+geospatial analysis:
+  libraries:
+    - geopandas
+    - shapely
+    - pyproj
+    - folium
+    - rasterio
+    - cartopy
+    - geopy
+    - osmnx
+  tasks:
+    - name: Create a spatial analysis system for proximity calculations
+      code_forms:
+        - analyzer class
+    
+    - name: Implement a map projection conversion function with accuracy metrics
+      code_forms:
+        - converter function
+    
+    - name: Build a geocoding class with multiple service providers
+      code_forms:
+        - geocoder class
+    
+    - name: Develop a route optimization function with constraints
+      code_forms:
+        - utility function

@@ -1,4 +1,3 @@
-import itertools
 import json
 import random
 from typing import Any
@@ -28,7 +27,7 @@ def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
             task_name = task_entry.get("name", "")
             code_forms = task_entry.get("code_forms", [])
 
-            combinations.append(  # noqa: PERF401 - should be a comprehension list but let's keep it simple
+            combinations.append(  # - should be a comprehension list but let's keep it simple
                 {
                     "domain": domain,
                     "task": task_name,
@@ -40,7 +39,9 @@ def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
     return combinations
 
 
-def create_first_stage_prompt(combination: dict[str, Any]) -> str:
+def create_first_stage_prompt(
+    combination: dict[str, Any], is_test: bool = False
+) -> str:
     """
     Creates a JSON-oriented prompt template for the first stage (simple code examples).
     """
@@ -51,14 +52,15 @@ def create_first_stage_prompt(combination: dict[str, Any]) -> str:
 
     libraries_str = ", ".join(libraries)
 
-    prompt = f"""Generate 3 very different and specific Python code examples, one for each code form in the list : {code_forms}, that address the task: "{task}" in the {domain} domain.
+    if not is_test:
+        prompt = f"""Generate 3 very different and specific Python code examples, one for each code form in the list : {code_forms}, that address the task: "{task}" in the {domain} domain.
 
 You can use one or more of these libraries: {libraries_str}.
 
 For each example:
-1. Create a UNIQUE and SPECIFIC use case in this domain (be very precise about the context and needs, but stay super concise.)
-2. Generate Python code that directly solves the task (no type annotations, no comments, go straight to the point with beginner python level)
-3. Provide a simple prompt that could be used to ask another AI model to generate exactly this code. This part very important and shouldn't be neglected.
+1. Create a UNIQUE and SPECIFIC use case in this domain addressing the task e study (be very precise about the context and needs, but stay super concise.)
+2. Generate Python code that directly solves the task (no type annotations, no comments, no docstrings, go straight to the point with beginner python level)
+3. Provide a simple prompt that could be used by a human to ask another AI model to generate the code solving the use case. This part very important and shouldn't be neglected.
 
 Your response must be a valid JSON object with the following structure:
 {{
@@ -66,7 +68,7 @@ Your response must be a valid JSON object with the following structure:
     {{
       "use_case": "Detailed description of the first use case",
       "code": "Your Python code here",
-      "prompt": "Simple prompt to generate exactly this code"
+      "prompt": "Simple prompt to generate this code"
     }},
     ... (repeat for all 3 examples)
   ]
@@ -77,11 +79,28 @@ Even if the task is already precise, find a way to propose 3 ideas that are sign
 On the other hand, if the task is too broad/big, imagine an example that solves only a specific part of it.
 """
 
+    else:
+        prompt = f"""Generate a Python code example that uses the {code_forms} approach to address the task: "{task}" in the {domain} domain.
+
+You can use one or more of these libraries: {libraries_str}.
+
+Create a SPECIFIC and UNIQUE use case in this domain (be precise about the context and needs, but stay concise).
+Generate Python code that directly solves the task (no type annotations, no comments, go straight to the point with beginner python level).
+
+Your response must be a valid JSON object with the following structure:
+{{
+  "use_case": "Detailed description of the use case",
+  "code": "Your Python code here"
+}}
+
+Remember to make the code targeted, practical, and directly address the task without superfluous elements.
+"""
+
     return prompt
 
 
 def create_second_stage_prompt(
-    first_response: dict[str, Any], combination: dict[str, Any]
+    first_response: dict[str, Any], combination: dict[str, Any], is_test: bool = False
 ) -> str:
     """
     Creates a prompt for the second stage (fully typed, commented, high-quality code).
@@ -89,6 +108,7 @@ def create_second_stage_prompt(
     Args:
         first_response: The parsed JSON response from the first stage
         combination: The original domain/task/libraries/code_form combination
+        is_test : is the dataset generated for test or for train
 
     Returns:
         A prompt for generating improved versions of the code examples
@@ -98,15 +118,17 @@ def create_second_stage_prompt(
     libraries = combination["libraries"]
     code_form = combination["code_form"]
 
-    # Extract the examples from the first response
-    examples = first_response.get("examples", [])
+    if not is_test:
+        # Extract the examples from the first response
+        examples = first_response.get("examples", [])
 
-    # Create a JSON-ready array of the original code examples
-    code_examples_json = json.dumps(
-        [{"use_case": ex["use_case"], "code": ex["code"]} for ex in examples], indent=2
-    )
+        # Create a JSON-ready array of the original code examples
+        code_examples_json = json.dumps(
+            [{"use_case": ex["use_case"], "code": ex["code"]} for ex in examples],
+            indent=2,
+        )
 
-    prompt = f"""I have a set of Python code examples in the {domain} domain that address the task: "{task}" using the {code_form} approach. 
+        prompt = f"""I have a set of Python code examples in the {domain} domain that address the task: "{task}" using the {code_form} approach. 
 These examples were written to be minimal and straightforward.
 
 Now I need you to rewrite each example with:
@@ -128,6 +150,43 @@ Please respond with a valid JSON object with the following structure:
     }},
     ... (repeat for all examples)
   ]
+}}
+
+Make sure your improved code demonstrates Python expertise while maintaining the exact functionality of the original code. Focus on adding types, documentation, and improving code quality without changing the core logic or functionality."""
+
+    else:
+        # Extract the example from the first response
+        use_case = first_response.get("use_case", "")
+        code = first_response.get("code", "")
+
+        # Create a JSON-ready representation of the original code example
+        code_example_json = json.dumps({"use_case": use_case, "code": code}, indent=2)
+
+        prompt = f"""I have a Python code example in the {domain} domain that addresses the task: "{task}" using the {code_form} approach. 
+This example was written to be minimal and straightforward.
+
+Now I need you to rewrite the example with:
+1. Proper type annotations following mypy standards
+2. Comprehensive docstrings and comments explaining the code
+3. Improved code quality and best practices where applicable
+4. Any refinements that would make this production-ready, high-quality code
+
+Additionally, generate THREE different prompts that could be used to request this code:
+1. A default prompt that simply asks for code to solve the use case
+2. A prompt that asks for code to solve the use case and specifies the code form (e.g., "function", "class") to use
+3. A prompt that asks for code to solve the use case and specifies both the code form AND the explicit input/output types
+
+Here is the original example:
+{code_example_json}
+
+Please respond with a valid JSON object with the following structure:
+{{
+"use_case": "The original use case description",
+"original_code": "The original code",
+"improved_code": "Your improved, typed, and commented code",
+"prompt_default": "A simple prompt to generate code for this use case",
+"prompt_code_form": "A prompt that specifies the code form to use",
+"prompt_code_form_types": "A prompt that specifies code form and hints at input/output types"
 }}
 
 Make sure your improved code demonstrates Python expertise while maintaining the exact functionality of the original code. Focus on adding types, documentation, and improving code quality without changing the core logic or functionality."""

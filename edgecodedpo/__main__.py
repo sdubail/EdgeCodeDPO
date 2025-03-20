@@ -41,6 +41,9 @@ def generate(
         "-o",
         help="Path to save the dataset",
     ),
+    is_test: bool = typer.Option(
+        False, "--test", "-t", help="Is the dataset for training or test purposes"
+    ),
     samples: int | None = typer.Option(
         None,
         "--samples",
@@ -85,6 +88,10 @@ def generate(
     )
 
     console.print("[bold]Configuration:[/bold]")
+    if is_test:
+        console.print("  Dataset is for test purposes.")
+    else:
+        console.print("  Dataset is for training purposes.")
     console.print(f"  Config file: [cyan]{config}[/cyan]")
     console.print(f"  Output path: [cyan]{output}[/cyan]")
     console.print(f"  Model: [cyan]{model}[/cyan]")
@@ -101,6 +108,7 @@ def generate(
             generate_dataset(
                 config_file=config,
                 output_path=output,
+                is_test=is_test,
                 num_samples=samples,
                 batch_size=batch_size,
                 openai_model=model,
