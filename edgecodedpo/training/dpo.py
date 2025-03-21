@@ -300,6 +300,7 @@ def load_and_evaluate_model(
     is_test: bool = False,
     max_length: int = 1024,
     num_examples: int = 10,
+    batch_size: int = 4,
 ) -> None:
     """
     Load a trained model and evaluate it on the dataset.
@@ -311,6 +312,7 @@ def load_and_evaluate_model(
         is_test: Whether the dataset is a test dataset with prompt types
         max_length: Maximum sequence length
         num_examples: Number of examples to evaluate
+        batch_size: Number of examples to process in a single batch
     """
     # Load model and tokenizer
     try:
@@ -379,44 +381,77 @@ def load_and_evaluate_model(
 
     # Generate predictions and evaluate
     results = []
-    for i, example in enumerate(eval_dataset):
-        # Get prompt from the example
-        prompt = example.get("prompt")
-        prompt_type = example.get("prompt_type") if is_test else "default"
+    batch_size = 4  # You can adjust this based on your GPU memory
 
-        # Initialize metrics for this prompt type if we haven't seen it before
-        if prompt_type and prompt_type not in prompt_types_metrics:
-            prompt_types_metrics[prompt_type] = {
-                "type_annotation_coverage": [],
-                "comment_density": [],
-                "docstring_coverage": [],
-                "code_complexity": [],
-                "pep8_compliance": [],
-                "execution_success_rate": 0,
-                "similarity_to_chosen": [],
-                "similarity_to_rejected": [],
-            }
-            prompt_types_counts[prompt_type] = 0
+    # Process dataset in batches
+    for batch_start in range(0, len(eval_dataset), batch_size):
+        batch_end = min(batch_start + batch_size, len(eval_dataset))
+        batch = eval_dataset[batch_start:batch_end]
 
-        if prompt_type:
-            prompt_types_counts[prompt_type] += 1
+        # Prepare batch inputs
+        batch_prompts = []
+        batch_prompt_types = []
 
-        if prompt is None:
-            continue
-        else:
+        for example in batch:
+            prompt = example.get("prompt")
+            if prompt is None:
+                batch_prompts.append(None)  # Will skip later
+                batch_prompt_types.append(None)
+                continue
+
             text_prompt = prompt[0]["content"]
+            batch_prompts.append(text_prompt)
 
-        # Generate completion using the model
-        input_ids = tokenizer(text_prompt, return_tensors="pt").input_ids.to(
+            prompt_type = example.get("prompt_type") if is_test else "default"
+            batch_prompt_types.append(prompt_type)
+
+            # Initialize metrics for this prompt type if we haven't seen it before
+            if prompt_type and prompt_type not in prompt_types_metrics:
+                prompt_types_metrics[prompt_type] = {
+                    "type_annotation_coverage": [],
+                    "comment_density": [],
+                    "docstring_coverage": [],
+                    "code_complexity": [],
+                    "pep8_compliance": [],
+                    "execution_success_rate": 0,
+                    "similarity_to_chosen": [],
+                    "similarity_to_rejected": [],
+                }
+                prompt_types_counts[prompt_type] = 0
+
+            if prompt_type:
+                prompt_types_counts[prompt_type] += 1
+
+        # Filter out None prompts
+        valid_indices = [i for i, p in enumerate(batch_prompts) if p is not None]
+        valid_prompts = [batch_prompts[i] for i in valid_indices]
+
+        if not valid_prompts:
+            continue
+
+        # Tokenize all valid prompts in the batch
+        batch_inputs = tokenizer(valid_prompts, return_tensors="pt", padding=True).to(
             model.device
         )
-        output = model.generate(
-            input_ids=input_ids,
+
+        # Generate completions for the batch
+        batch_outputs = model.generate(
+            input_ids=batch_inputs.input_ids,
+            attention_mask=batch_inputs.attention_mask,
             max_length=max_length,
             num_return_sequences=1,
             temperature=0.7,
         )
-        generated_code = tokenizer.decode(output[0], skip_special_tokens=True)
+
+        # Process each generated output
+        for i, idx in enumerate(valid_indices):
+            example = batch[idx]
+            prompt = example.get("prompt")
+            prompt_type = batch_prompt_types[idx]
+
+            # Decode the generated output
+            output_ids = batch_outputs[i]
+            generated_code = tokenizer.decode(output_ids, skip_special_tokens=True)
 
         code_blocks = extract_code_blocks(generated_code)
         full_script = assemble_code_blocks(code_blocks)

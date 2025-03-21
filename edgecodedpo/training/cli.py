@@ -423,6 +423,12 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "-n",
             help="Number of examples to evaluate",
         ),
+        batch_size: int = typer.Option(
+            4,
+            "--batch_size",
+            "-b",
+            help="Batch size for parallel generation",
+        ),
     ) -> None:
         """
         Evaluate a DPO-trained model.
@@ -449,6 +455,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
                 is_test=is_test,
                 output_dir=output_dir,
                 num_examples=num_examples,
+                batch_size=batch_size,
             )
 
             console.print(
