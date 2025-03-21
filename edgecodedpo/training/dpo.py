@@ -388,22 +388,23 @@ def load_and_evaluate_model(
         batch_end = min(batch_start + batch_size, len(eval_dataset))
         batch = eval_dataset[batch_start:batch_end]
 
-        # Prepare batch inputs
-        batch_prompts = []
-        batch_prompt_types = []
+        # Get prompts and prompt types from the batch
+        # Note: batch is a dict with column names as keys and lists of values
+        batch_prompts = batch.get("prompt", [])
+        batch_prompt_types = batch.get("prompt_type", [None] * len(batch_prompts))
 
-        for example in batch:
-            prompt = example.get("prompt")
-            if prompt is None:
-                batch_prompts.append(None)  # Will skip later
-                batch_prompt_types.append(None)
-                continue
+        # Process each example in the batch
+        valid_inputs = []
+        valid_indices = []
 
-            text_prompt = prompt[0]["content"]
-            batch_prompts.append(text_prompt)
+        for i in range(len(batch_prompts)):
+            prompt = batch_prompts[i] if i < len(batch_prompts) else None
+            prompt_type = (
+                batch_prompt_types[i] if i < len(batch_prompt_types) else "default"
+            )
 
-            prompt_type = example.get("prompt_type") if is_test else "default"
-            batch_prompt_types.append(prompt_type)
+            if not is_test and not prompt_type:
+                prompt_type = "default"
 
             # Initialize metrics for this prompt type if we haven't seen it before
             if prompt_type and prompt_type not in prompt_types_metrics:
@@ -422,15 +423,29 @@ def load_and_evaluate_model(
             if prompt_type:
                 prompt_types_counts[prompt_type] += 1
 
-        # Filter out None prompts
-        valid_indices = [i for i, p in enumerate(batch_prompts) if p is not None]
-        valid_prompts = [batch_prompts[i] for i in valid_indices]
+            # Skip examples without prompts
+            if not prompt:
+                continue
 
-        if not valid_prompts:
+            # Extract text prompt from the conversation format
+            if (
+                isinstance(prompt, list)
+                and len(prompt) > 0
+                and isinstance(prompt[0], dict)
+            ):
+                text_prompt = prompt[0].get("content", "")
+            else:
+                text_prompt = str(prompt)
+
+            valid_inputs.append(text_prompt)
+            valid_indices.append(i)
+
+        # Skip batch if no valid inputs
+        if not valid_inputs:
             continue
 
         # Tokenize all valid prompts in the batch
-        batch_inputs = tokenizer(valid_prompts, return_tensors="pt", padding=True).to(
+        batch_inputs = tokenizer(valid_inputs, return_tensors="pt", padding=True).to(
             model.device
         )
 
@@ -444,13 +459,24 @@ def load_and_evaluate_model(
         )
 
         # Process each generated output
-        for i, idx in enumerate(valid_indices):
-            example = batch[idx]
-            prompt = example.get("prompt")
-            prompt_type = batch_prompt_types[idx]
+        for j, idx in enumerate(valid_indices):
+            prompt = batch_prompts[idx]
+            prompt_type = (
+                batch_prompt_types[idx] if idx < len(batch_prompt_types) else "default"
+            )
+            chosen = (
+                batch.get("chosen", [])[idx]
+                if idx < len(batch.get("chosen", []))
+                else None
+            )
+            rejected = (
+                batch.get("rejected", [])[idx]
+                if idx < len(batch.get("rejected", []))
+                else None
+            )
 
-            # Decode the generated output
-            output_ids = batch_outputs[i]
+            # Decode the generated output (each output is for a single example)
+            output_ids = batch_outputs[j]
             generated_code = tokenizer.decode(output_ids, skip_special_tokens=True)
 
         code_blocks = extract_code_blocks(generated_code)
@@ -495,9 +521,8 @@ def load_and_evaluate_model(
                     prompt_types_metrics[prompt_type][metric_name] = avg_value
 
         # Compare with chosen code
-        chosen_code = example.get("chosen")
-        if chosen_code:
-            text_chosen_code = chosen_code[0]["content"]
+        if chosen:
+            text_chosen_code = chosen[0]["content"]
             similarity_to_chosen = calculate_code_similarity(
                 generated_code, text_chosen_code
             )
@@ -510,9 +535,8 @@ def load_and_evaluate_model(
             similarity_to_chosen = None
 
         # Compare with rejected code
-        rejected_code = example.get("rejected")
-        if rejected_code:
-            text_rejected_code = rejected_code[0]["content"]
+        if rejected:
+            text_rejected_code = rejected[0]["content"]
             similarity_to_rejected = calculate_code_similarity(
                 generated_code, text_rejected_code
             )
@@ -531,8 +555,8 @@ def load_and_evaluate_model(
                 "prompt_type": prompt_type,
                 "generated_code": generated_code,
                 "preprocess_code_blocks": preprocess_blocks,
-                "chosen_code": chosen_code,
-                "rejected_code": rejected_code,
+                "chosen_code": chosen,
+                "rejected_code": rejected,
                 "code_block_metrics": block_metrics,
                 "execution_result": execution_result,
                 "similarity_to_chosen": similarity_to_chosen,
