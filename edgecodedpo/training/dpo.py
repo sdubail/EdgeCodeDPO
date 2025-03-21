@@ -14,6 +14,7 @@ import numpy as np
 import torch
 from datasets import Dataset, load_dataset, load_from_disk
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
+from tqdm import tqdm
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -382,7 +383,7 @@ def load_and_evaluate_model(
     # Generate predictions and evaluate
     results = []
     # Process dataset in batches
-    for batch_start in range(0, len(eval_dataset), batch_size):
+    for batch_start in tqdm(range(0, len(eval_dataset), batch_size)):
         batch_end = min(batch_start + batch_size, len(eval_dataset))
         batch = eval_dataset[batch_start:batch_end]
 
@@ -446,6 +447,7 @@ def load_and_evaluate_model(
         batch_inputs = tokenizer(valid_inputs, return_tensors="pt", padding=True).to(
             model.device
         )
+        print(f"Input length:{len(batch_inputs.input_ids)}")
         # Generate completions for the batch
         batch_outputs = model.generate(
             input_ids=batch_inputs.input_ids,
@@ -454,6 +456,7 @@ def load_and_evaluate_model(
             num_return_sequences=1,
             temperature=0.7,
         )
+        print(f"Input length:{len(batch_outputs)}")
         # Process each generated output
         for j, idx in enumerate(valid_indices):
             prompt = batch_prompts[idx]
@@ -479,6 +482,7 @@ def load_and_evaluate_model(
             full_script = assemble_code_blocks(code_blocks)
             preprocess_blocks = preprocess_code_blocks(code_blocks)
             if len(preprocess_blocks) == 0:
+                print("No code found, skipping.")
                 continue
 
             block_metrics = {
@@ -563,7 +567,7 @@ def load_and_evaluate_model(
                     "similarity_to_rejected": similarity_to_rejected,
                 }
             )
-
+    print(f"Total result length:{len(results)}")
     # Calculate aggregate metrics for overall results
     aggregated_metrics = {}
     for key in metrics:
