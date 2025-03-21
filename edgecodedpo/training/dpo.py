@@ -448,7 +448,7 @@ def load_and_evaluate_model(
         batch_inputs = tokenizer(valid_inputs, return_tensors="pt", padding=True).to(
             model.device
         )
-
+        print(f"Number of inputs in batch:{len(batch_inputs)}")
         # Generate completions for the batch
         batch_outputs = model.generate(
             input_ids=batch_inputs.input_ids,
@@ -457,7 +457,7 @@ def load_and_evaluate_model(
             num_return_sequences=1,
             temperature=0.7,
         )
-
+        print(f"Number of outputs in batch:{len(batch_outputs)}")
         # Process each generated output
         for j, idx in enumerate(valid_indices):
             prompt = batch_prompts[idx]
