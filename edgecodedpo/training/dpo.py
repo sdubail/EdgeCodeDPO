@@ -23,16 +23,16 @@ from transformers import (
 from trl import DPOConfig, DPOTrainer
 
 from edgecodedpo.config import settings
+from edgecodedpo.training.eval_metrics import (
+    calculate_code_similarity,
+    evaluate_code_quality,
+    execute_code,
+)
 from edgecodedpo.training.visualization import create_visualizations
 from edgecodedpo.utils.generated_code_parsing import (
     assemble_code_blocks,
     extract_code_blocks,
     preprocess_code_blocks,
-)
-from training.eval_metrics import (
-    calculate_code_similarity,
-    evaluate_code_quality,
-    execute_code,
 )
 
 
@@ -385,6 +385,7 @@ def load_and_evaluate_model(
 
     # Generate predictions and evaluate
     results = []
+    fails = []
     # Process dataset in batches
     for batch_start in tqdm(range(0, len(eval_dataset), batch_size)):
         batch_end = min(batch_start + batch_size, len(eval_dataset))
@@ -485,6 +486,7 @@ def load_and_evaluate_model(
             full_script = assemble_code_blocks(code_blocks)
             preprocess_blocks = preprocess_code_blocks(code_blocks)
             if len(preprocess_blocks) == 0:
+                fails.append(generated_code)
                 print("No code found, skipping.")
                 continue
 
