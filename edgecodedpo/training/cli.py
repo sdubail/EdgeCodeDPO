@@ -232,6 +232,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
         console.print(f"  Learning rate: [cyan]{lr}[/cyan]")
         console.print(f"  Batch size: [cyan]{bs}[/cyan]")
         console.print(f"  Using Quantization: [cyan]{use_quantization}[/cyan]")
+        console.print(f"Model is already a LoRA: [cyan]{is_already_lora}[/cyan]")
         console.print(f"  Using LoRA: [cyan]{use_lora}[/cyan]")
 
         if use_lora:
