@@ -29,8 +29,11 @@ from edgecodedpo.utils.generated_code_parsing import (
     extract_code_blocks,
     preprocess_code_blocks,
 )
-
-from .eval_metrics import calculate_code_similarity, evaluate_code_quality, execute_code
+from training.eval_metrics import (
+    calculate_code_similarity,
+    evaluate_code_quality,
+    execute_code,
+)
 
 
 def load_model_and_tokenizer(
@@ -456,7 +459,7 @@ def load_and_evaluate_model(
             num_return_sequences=1,
             temperature=0.7,
         )
-        print(f"Input length:{len(batch_outputs)}")
+        print(f"Output length:{len(batch_outputs)}")
         # Process each generated output
         for j, idx in enumerate(valid_indices):
             prompt = batch_prompts[idx]
