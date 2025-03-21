@@ -1,22 +1,18 @@
 import os
-import json
 from typing import Any
 
-import torch
+from datasets import load_dataset, load_from_disk
 from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
+    DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling,
 )
-from datasets import load_from_disk, load_dataset
+from trl import DPOConfig
 
-from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model
-from trl import DPOConfig  # Not strictly necessary for SFT, unless you want uniformity
 from edgecodedpo.config import settings
-from edgecodedpo.training.visualization import create_visualizations
 from edgecodedpo.training.dpo import load_model_and_tokenizer
+from edgecodedpo.training.visualization import create_visualizations
+
 
 def preprocess_sft_dataset(
     dataset_path: str,
@@ -48,7 +44,6 @@ def preprocess_sft_dataset(
         dataset = load_from_disk(dataset_path)
     else:
         # Attempt to load from HuggingFace Hub
-        # (similar logic to your `preprocess_dataset(...)`)
         if ":" in dataset_path:
             repo_id, split = dataset_path.split(":", 1)
             dataset = load_dataset(repo_id, split=split)
@@ -63,26 +58,17 @@ def preprocess_sft_dataset(
     # ---------------------------------------------------------------------
     # 1B. Create the "text" to be used for training from 'prompt' + 'chosen'
     # ---------------------------------------------------------------------
-    # In SFT, you typically want to train the model to produce the chosen answer,
+    # In SFT, train the model to produce the chosen answer,
     # potentially conditioned on the prompt. If your dataset has columns:
     #   - 'prompt'
     #   - 'chosen' (the better response)
-    #
-    # We can combine them into a single text sequence for training:
-    #
-    # Example: <prompt>\n<chosen>
-    #
-    # Or you can just use 'chosen' alone if your data is already prompt+answer.
 
     def build_text(example):
         prompt = example.get("prompt", "")[0]["content"]
         chosen = example.get("chosen", "")[0]["content"]
         if isinstance(chosen, list):
-            # If 'chosen' is a list of messages or strings, you might need to join them
-            # or pick the last message, etc. For simplicity, assume a single string.
             chosen = chosen[0] if chosen else ""
         if combine_prompt_and_chosen:
-            # join them with a separator of your choice
             return prompt + "\n" + chosen
         else:
             return chosen
@@ -99,7 +85,6 @@ def preprocess_sft_dataset(
         )
         return tokens
 
-    # .map(...) the dataset to transform each row
     dataset = dataset.map(tokenize_fn, batched=False, num_proc=num_proc)
 
     return dataset
@@ -158,13 +143,14 @@ def train_sft(
     dataset_num_proc = int(sft_config.get("dataset_num_proc", 4))
 
     # ---------------------------------------------------------------------
-    # 2C. Load model and tokenizer (reuse your existing function!)
+    # 2C. Load model and tokenizer
     # ---------------------------------------------------------------------
-    
-    # or whichever file your load_model_and_tokenizer is defined in
+
     model, tokenizer = load_model_and_tokenizer(
         model_name_or_path=model_name_or_path,
-        dpo_config=DPOConfig(output_dir=output_dir),  # We won't really use it for SFT, but we keep the signature
+        dpo_config=DPOConfig(
+            output_dir=output_dir
+        ),  # We won't really use it for SFT, but we keep the signature
         quantization_config=quantization_config,
         lora_config=lora_config,
     )
@@ -262,6 +248,8 @@ def train_sft(
     # ---------------------------------------------------------------------
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
-        print(f"Model pushed to Hugging Face Hub at: https://huggingface.co/{hub_model_id}")
+        print(
+            f"Model pushed to Hugging Face Hub at: https://huggingface.co/{hub_model_id}"
+        )
 
     print(f"SFT complete! Model saved to: {output_dir}")

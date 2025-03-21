@@ -1,22 +1,18 @@
 import os
 from typing import Any
+
 import typer
 import yaml
 from rich.console import Console
 from rich.panel import Panel
 from rich.traceback import Traceback
 
-# We assume these are the same as in your existing CLI file
-from edgecodedpo.training.dpo import load_and_evaluate_model  # optional if you re-use some parts
-from edgecodedpo.training.sft import train_sft  # <-- Import your new SFT function here
-from edgecodedpo.config import settings 
+from edgecodedpo.training.sft import train_sft
 
 console = Console()
 
+
 def load_training_config(config_path: str) -> dict[str, Any]:
-    """
-    Same function as in your DPO code: loads YAML config from disk.
-    """
     if not os.path.exists(config_path):
         console.print(
             f"[bold red]Warning:[/bold red] Config file {config_path} not found. Using default values."
@@ -31,10 +27,8 @@ def load_training_config(config_path: str) -> dict[str, Any]:
             console.print(f"[bold red]Error parsing YAML configuration:[/bold red] {e}")
             return {}
 
+
 def get_config_value(config: dict[str, Any], *keys: str, default: Any = None) -> Any:
-    """
-    Same nested dictionary helper as in your DPO code.
-    """
     current = config
     for key in keys:
         if not isinstance(current, dict) or key not in current:
@@ -48,7 +42,9 @@ def register_sft_commands(app: typer.Typer) -> None:
     Register SFT training commands with the Typer app.
     """
 
-    @app.command(name="sft-train", help="Train a model using Supervised Fine-Tuning (SFT)")
+    @app.command(
+        name="sft-train", help="Train a model using Supervised Fine-Tuning (SFT)"
+    )
     def train_sft_cli(
         model_name_or_path: str = typer.Option(
             None,
@@ -127,9 +123,23 @@ def register_sft_commands(app: typer.Typer) -> None:
         )
 
         # 5) Pull / override training hyperparams
-        num_epochs = epochs if epochs is not None else get_config_value(config, "training", "num_train_epochs", default=3)
-        lr = learning_rate if learning_rate is not None else get_config_value(config, "training", "learning_rate", default=5e-5)
-        bs = batch_size if batch_size is not None else get_config_value(config, "training", "per_device_train_batch_size", default=4)
+        num_epochs = (
+            epochs
+            if epochs is not None
+            else get_config_value(config, "training", "num_train_epochs", default=3)
+        )
+        lr = (
+            learning_rate
+            if learning_rate is not None
+            else get_config_value(config, "training", "learning_rate", default=5e-5)
+        )
+        bs = (
+            batch_size
+            if batch_size is not None
+            else get_config_value(
+                config, "training", "per_device_train_batch_size", default=4
+            )
+        )
 
         # 6) Push-to-hub overrides
         push_to_hub_enabled = (
@@ -178,13 +188,25 @@ def register_sft_commands(app: typer.Typer) -> None:
             ),
             "bf16": get_config_value(config, "training", "bf16", default=True),
             "fp16": get_config_value(config, "training", "fp16", default=False),
-            "weight_decay": get_config_value(config, "training", "weight_decay", default=0.01),
+            "weight_decay": get_config_value(
+                config, "training", "weight_decay", default=0.01
+            ),
             "max_length": get_config_value(config, "model", "max_length", default=1024),
-            "logging_steps": get_config_value(config, "training", "logging_steps", default=10),
-            "save_steps": get_config_value(config, "training", "save_steps", default=100),
-            "eval_steps": get_config_value(config, "training", "eval_steps", default=100),
-            "eval_split": get_config_value(config, "training", "eval_split", default=0.1),
-            "dataset_num_proc": get_config_value(config, "training", "dataset_num_proc", default=4),
+            "logging_steps": get_config_value(
+                config, "training", "logging_steps", default=10
+            ),
+            "save_steps": get_config_value(
+                config, "training", "save_steps", default=100
+            ),
+            "eval_steps": get_config_value(
+                config, "training", "eval_steps", default=100
+            ),
+            "eval_split": get_config_value(
+                config, "training", "eval_split", default=0.1
+            ),
+            "dataset_num_proc": get_config_value(
+                config, "training", "dataset_num_proc", default=4
+            ),
         }
 
         # 9) Build quantization config if enabled
@@ -195,13 +217,25 @@ def register_sft_commands(app: typer.Typer) -> None:
                     config, "optimization", "quantization", "load_in_4bit", default=True
                 ),
                 "bnb_4bit_use_double_quant": get_config_value(
-                    config, "optimization", "quantization", "bnb_4bit_use_double_quant", default=True
+                    config,
+                    "optimization",
+                    "quantization",
+                    "bnb_4bit_use_double_quant",
+                    default=True,
                 ),
                 "bnb_4bit_quant_type": get_config_value(
-                    config, "optimization", "quantization", "bnb_4bit_quant_type", default="nf4"
+                    config,
+                    "optimization",
+                    "quantization",
+                    "bnb_4bit_quant_type",
+                    default="nf4",
                 ),
                 "bnb_4bit_compute_dtype": get_config_value(
-                    config, "optimization", "quantization", "bnb_4bit_compute_dtype", default="bfloat16"
+                    config,
+                    "optimization",
+                    "quantization",
+                    "bnb_4bit_compute_dtype",
+                    default="bfloat16",
                 ),
             }
 
@@ -209,13 +243,19 @@ def register_sft_commands(app: typer.Typer) -> None:
         lora_config = None
         if use_lora:
             lora_r = get_config_value(config, "optimization", "lora", "r", default=16)
-            lora_alpha = get_config_value(config, "optimization", "lora", "lora_alpha", default=16)
-            lora_dropout = get_config_value(config, "optimization", "lora", "lora_dropout", default=0.05)
+            lora_alpha = get_config_value(
+                config, "optimization", "lora", "lora_alpha", default=16
+            )
+            lora_dropout = get_config_value(
+                config, "optimization", "lora", "lora_dropout", default=0.05
+            )
             lora_config = {
                 "r": lora_r,
                 "lora_alpha": lora_alpha,
                 "lora_dropout": lora_dropout,
-                "target_modules": get_config_value(config, "optimization", "lora", "target_modules", default=None),
+                "target_modules": get_config_value(
+                    config, "optimization", "lora", "target_modules", default=None
+                ),
             }
 
         # 11) Finally, call our SFT training
