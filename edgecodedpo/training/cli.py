@@ -131,6 +131,11 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "--push-to-hub",
             help="Push model to HuggingFace Hub (overrides config)",
         ),
+        is_already_lora: bool | None = typer.Option(
+            None,
+            "--is_already_lora",
+            help="Push model to HuggingFace Hub (overrides config)",
+        ),
         hub_model_id: str | None = typer.Option(
             None,
             "--hub-model-id",
