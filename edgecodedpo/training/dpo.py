@@ -318,7 +318,7 @@ def load_and_evaluate_model(
     try:
         # Try loading as a PEFT model first
         model = AutoPeftModelForCausalLM.from_pretrained(
-            model_path, device_map="auto", trust_remote_code=True
+            model_path, device_map="cpu", trust_remote_code=True
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
     except Exception:
@@ -381,8 +381,6 @@ def load_and_evaluate_model(
 
     # Generate predictions and evaluate
     results = []
-    batch_size = 4  # You can adjust this based on your GPU memory
-
     # Process dataset in batches
     for batch_start in range(0, len(eval_dataset), batch_size):
         batch_end = min(batch_start + batch_size, len(eval_dataset))
@@ -448,7 +446,6 @@ def load_and_evaluate_model(
         batch_inputs = tokenizer(valid_inputs, return_tensors="pt", padding=True).to(
             model.device
         )
-        print(f"Number of inputs in batch:{len(batch_inputs)}")
         # Generate completions for the batch
         batch_outputs = model.generate(
             input_ids=batch_inputs.input_ids,
@@ -457,7 +454,6 @@ def load_and_evaluate_model(
             num_return_sequences=1,
             temperature=0.7,
         )
-        print(f"Number of outputs in batch:{len(batch_outputs)}")
         # Process each generated output
         for j, idx in enumerate(valid_indices):
             prompt = batch_prompts[idx]
@@ -479,90 +475,94 @@ def load_and_evaluate_model(
             output_ids = batch_outputs[j]
             generated_code = tokenizer.decode(output_ids, skip_special_tokens=True)
 
-        code_blocks = extract_code_blocks(generated_code)
-        full_script = assemble_code_blocks(code_blocks)
-        preprocess_blocks = preprocess_code_blocks(code_blocks)
-        if len(preprocess_blocks) == 0:
-            continue
+            code_blocks = extract_code_blocks(generated_code)
+            full_script = assemble_code_blocks(code_blocks)
+            preprocess_blocks = preprocess_code_blocks(code_blocks)
+            if len(preprocess_blocks) == 0:
+                continue
 
-        block_metrics = {
-            "type_annotation_coverage": [],
-            "comment_density": [],
-            "docstring_coverage": [],
-            "code_complexity": [],
-            "pep8_compliance": [],
-        }
-        for code_block in preprocess_blocks:
-            # Evaluate code quality
-            code_metrics = evaluate_code_quality(code_block)
-            for key, value in code_metrics.items():
-                block_metrics[key].append(value)
-
-        # Evaluate functional correctness
-        execution_result = execute_code(full_script)
-        if execution_result["success"]:
-            metrics["execution_success_rate"] += 1
-            if prompt_type:
-                prompt_types_metrics[prompt_type]["execution_success_rate"] += 1
-
-        # Averaging metrics across code blocks
-        for metric_name, metric_value in block_metrics.items():
-            if isinstance(metric_value, list):
-                filtered_values = list(filter(lambda x: x is not None, metric_value))
-                if filtered_values:
-                    avg_value = np.mean(filtered_values)
-                    metrics[metric_name].append(avg_value)
-                    if prompt_type:
-                        prompt_types_metrics[prompt_type][metric_name].append(avg_value)
-            elif isinstance(metric_value, int):
-                avg_value = metric_value / len(preprocess_blocks)
-                metrics[metric_name] = avg_value
-                if prompt_type:
-                    prompt_types_metrics[prompt_type][metric_name] = avg_value
-
-        # Compare with chosen code
-        if chosen:
-            text_chosen_code = chosen[0]["content"]
-            similarity_to_chosen = calculate_code_similarity(
-                generated_code, text_chosen_code
-            )
-            metrics["similarity_to_chosen"].append(similarity_to_chosen)
-            if prompt_type:
-                prompt_types_metrics[prompt_type]["similarity_to_chosen"].append(
-                    similarity_to_chosen
-                )
-        else:
-            similarity_to_chosen = None
-
-        # Compare with rejected code
-        if rejected:
-            text_rejected_code = rejected[0]["content"]
-            similarity_to_rejected = calculate_code_similarity(
-                generated_code, text_rejected_code
-            )
-            metrics["similarity_to_rejected"].append(similarity_to_rejected)
-            if prompt_type:
-                prompt_types_metrics[prompt_type]["similarity_to_rejected"].append(
-                    similarity_to_rejected
-                )
-        else:
-            similarity_to_rejected = None
-
-        # Save the results
-        results.append(
-            {
-                "prompt": prompt,
-                "prompt_type": prompt_type,
-                "generated_code": generated_code,
-                "preprocess_code_blocks": preprocess_blocks,
-                "chosen_code": chosen,
-                "rejected_code": rejected,
-                "code_block_metrics": block_metrics,
-                "execution_result": execution_result,
-                "similarity_to_chosen": similarity_to_chosen,
-                "similarity_to_rejected": similarity_to_rejected,
+            block_metrics = {
+                "type_annotation_coverage": [],
+                "comment_density": [],
+                "docstring_coverage": [],
+                "code_complexity": [],
+                "pep8_compliance": [],
             }
-        )
+            for code_block in preprocess_blocks:
+                # Evaluate code quality
+                code_metrics = evaluate_code_quality(code_block)
+                for key, value in code_metrics.items():
+                    block_metrics[key].append(value)
+
+            # Evaluate functional correctness
+            execution_result = execute_code(full_script)
+            if execution_result["success"]:
+                metrics["execution_success_rate"] += 1
+                if prompt_type:
+                    prompt_types_metrics[prompt_type]["execution_success_rate"] += 1
+
+            # Averaging metrics across code blocks
+            for metric_name, metric_value in block_metrics.items():
+                if isinstance(metric_value, list):
+                    filtered_values = list(
+                        filter(lambda x: x is not None, metric_value)
+                    )
+                    if filtered_values:
+                        avg_value = np.mean(filtered_values)
+                        metrics[metric_name].append(avg_value)
+                        if prompt_type:
+                            prompt_types_metrics[prompt_type][metric_name].append(
+                                avg_value
+                            )
+                elif isinstance(metric_value, int):
+                    avg_value = metric_value / len(preprocess_blocks)
+                    metrics[metric_name] = avg_value
+                    if prompt_type:
+                        prompt_types_metrics[prompt_type][metric_name] = avg_value
+
+            # Compare with chosen code
+            if chosen:
+                text_chosen_code = chosen[0]["content"]
+                similarity_to_chosen = calculate_code_similarity(
+                    generated_code, text_chosen_code
+                )
+                metrics["similarity_to_chosen"].append(similarity_to_chosen)
+                if prompt_type:
+                    prompt_types_metrics[prompt_type]["similarity_to_chosen"].append(
+                        similarity_to_chosen
+                    )
+            else:
+                similarity_to_chosen = None
+
+            # Compare with rejected code
+            if rejected:
+                text_rejected_code = rejected[0]["content"]
+                similarity_to_rejected = calculate_code_similarity(
+                    generated_code, text_rejected_code
+                )
+                metrics["similarity_to_rejected"].append(similarity_to_rejected)
+                if prompt_type:
+                    prompt_types_metrics[prompt_type]["similarity_to_rejected"].append(
+                        similarity_to_rejected
+                    )
+            else:
+                similarity_to_rejected = None
+
+            # Save the results
+            results.append(
+                {
+                    "prompt": prompt,
+                    "prompt_type": prompt_type,
+                    "generated_code": generated_code,
+                    "preprocess_code_blocks": preprocess_blocks,
+                    "chosen_code": chosen,
+                    "rejected_code": rejected,
+                    "code_block_metrics": block_metrics,
+                    "execution_result": execution_result,
+                    "similarity_to_chosen": similarity_to_chosen,
+                    "similarity_to_rejected": similarity_to_rejected,
+                }
+            )
 
     # Calculate aggregate metrics for overall results
     aggregated_metrics = {}
