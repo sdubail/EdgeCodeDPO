@@ -373,6 +373,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
                 dpo_config=dpo_config,
                 quantization_config=quantization_config,
                 lora_config=lora_config,
+                is_already_lora=is_already_lora,
                 push_to_hub=push_to_hub_enabled,
                 hub_model_id=hub_id,
             )

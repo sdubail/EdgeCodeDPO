@@ -41,6 +41,7 @@ def load_model_and_tokenizer(
     dpo_config: DPOConfig,
     quantization_config: dict[str, Any] | None = None,
     lora_config: dict[str, Any] | None = None,
+    is_already_lora: bool = False,
 ) -> tuple:
     """
     Load the model and tokenizer for DPO training.
@@ -50,6 +51,7 @@ def load_model_and_tokenizer(
         dpo_config: DPO configuration
         quantization_config: Configuration for quantization (BitsAndBytes)
         lora_config: Configuration for LoRA
+        is_already_lora: if the model is already a lora, load adapter twice
 
     Returns:
         tuple: (model, tokenizer)
@@ -92,22 +94,30 @@ def load_model_and_tokenizer(
     if bnb_config:
         model_kwargs["quantization_config"] = bnb_config
 
-    # Load model
-    model = AutoModelForCausalLM.from_pretrained(model_name_or_path, **model_kwargs)
+    if not is_already_lora:
+        # Load model
+        model = AutoModelForCausalLM.from_pretrained(model_name_or_path, **model_kwargs)
 
-    model.config.use_cache = False
+        model.config.use_cache = False
 
-    # Apply LoRA if specified
-    if lora_config:
-        peft_config = LoraConfig(
-            r=lora_config.get("r", 16),
-            lora_alpha=lora_config.get("lora_alpha", 16),
-            lora_dropout=lora_config.get("lora_dropout", 0.05),
-            target_modules=lora_config.get("target_modules", None),
-            bias="none",
-            task_type="CAUSAL_LM",
+        # Apply LoRA if specified
+        if lora_config:
+            peft_config = LoraConfig(
+                r=lora_config.get("r", 16),
+                lora_alpha=lora_config.get("lora_alpha", 16),
+                lora_dropout=lora_config.get("lora_dropout", 0.05),
+                target_modules=lora_config.get("target_modules", None),
+                bias="none",
+                task_type="CAUSAL_LM",
+            )
+            model = get_peft_model(model, peft_config)
+
+    else:
+        model = AutoPeftModelForCausalLM.from_pretrained(
+            model_name_or_path, adapter_name="train", **model_kwargs
         )
-        model = get_peft_model(model, peft_config)
+        # Load the adapter a second time, with a different name, which will be our reference model.
+        model.load_adapter(model_name_or_path, adapter_name="reference")
 
     return model, tokenizer
 
@@ -180,6 +190,7 @@ def train_dpo(
     dpo_config: dict[str, Any] | None = None,
     quantization_config: dict[str, Any] | None = None,
     lora_config: dict[str, Any] | None = None,
+    is_already_lora: bool = False,
     push_to_hub: bool = False,
     hub_model_id: str | None = None,
 ) -> None:
@@ -193,11 +204,15 @@ def train_dpo(
         dpo_config: DPO configuration
         quantization_config: Configuration for quantization
         lora_config: Configuration for LoRA
+        is_already_lora: is the model already a lora, in that case load adapter twice
         push_to_hub: Whether to push the model to HuggingFace Hub
         hub_model_id: ID for the HuggingFace repository
     """
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
+
+    model_adapter_name = "train" if is_already_lora else None
+    ref_adapter_name = "reference" if is_already_lora else None
 
     # Set up DPO configuration
     training_args = DPOConfig(
@@ -226,6 +241,8 @@ def train_dpo(
         fp16=dpo_config.get("fp16", False),
         precompute_ref_log_probs=dpo_config.get("precompute_ref_log_probs", False),
         logging_dir=os.path.join(output_dir, "logs"),
+        model_adapter_name=model_adapter_name,
+        ref_adapter_name=ref_adapter_name,
         # report_to=dpo_config.get("report_to", "tensorboard"),
         push_to_hub=push_to_hub,
         hub_model_id=hub_model_id,
@@ -238,6 +255,7 @@ def train_dpo(
         dpo_config=training_args,
         quantization_config=quantization_config,
         lora_config=lora_config,
+        is_already_lora=is_already_lora,
     )
 
     # Load and preprocess dataset
@@ -322,7 +340,7 @@ def load_and_evaluate_model(
     try:
         # Try loading as a PEFT model first
         model = AutoPeftModelForCausalLM.from_pretrained(
-            model_path, device_map="cpu", trust_remote_code=True
+            model_path, device_map="auto", trust_remote_code=True
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
     except Exception:
