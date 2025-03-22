@@ -114,7 +114,7 @@ def load_model_and_tokenizer(
 
     else:
         model = AutoPeftModelForCausalLM.from_pretrained(
-            model_name_or_path, adapter_name="train", **model_kwargs
+            model_name_or_path, **model_kwargs
         )
         # Load the adapter a second time, with a different name, which will be our reference model.
         model.load_adapter(model_name_or_path, adapter_name="reference")
