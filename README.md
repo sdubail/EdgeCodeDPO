@@ -12,7 +12,7 @@ This project is in its early stages with a focus on high-quality data generation
 
 EdgeCodeDPO is designed to create high-quality datasets for training and fine-tuning code generation models with DPO, a more efficient technique for aligning models with human preferences compared to traditional RLHF. The project generates pairs of code examples (chosen and rejected) across various programming domains, tasks, and code structures, and then provides tools to train models using these preferences.
 
-## Current Features
+## Features
 
 ### Dataset Generation
 
@@ -24,6 +24,7 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 - **Asynchronous Processing**: Efficiently processes multiple API requests concurrently
 - **Dataset Analysis**: Tools to analyze token length statistics and distribution
 - **HuggingFace Integration**: Outputs saved in HuggingFace dataset format with push-to-hub support
+- **Header-Only Mode**: Option to generate just function headers for specific use cases
 
 ### DPO Training
 
@@ -32,7 +33,8 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 - **LoRA Support**: Efficient fine-tuning with Low-Rank Adaptation
 - **Flexible Configuration**: YAML-based configuration for training parameters
 - **HuggingFace Integration**: Seamless integration with HuggingFace models and libraries
-- **Model Evaluation**: Tools to evaluate fine-tuned models
+- **Model Evaluation**: Tools to evaluate fine-tuned models with metrics for code quality
+- **Visualization**: Generate training metric plots from TensorBoard logs
 
 ### CLI Interface
 
@@ -41,6 +43,7 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 - **Dataset Statistics**: Analyze token length distributions and other metrics
 - **DPO Training**: Train models with various optimization methods
 - **Model Evaluation**: Evaluate trained models on test examples
+- **Upload/Download**: Manage datasets on HuggingFace Hub
 
 ## Installation
 
@@ -77,12 +80,20 @@ edgecodedpo generate
 
 # Generate with custom settings
 edgecodedpo generate --config edgecodedpo/configs/dataset.yaml --output data/gen_data --samples 10 --model gpt-4o-mini --batch-size 5
+
+# Generate function headers only
+edgecodedpo generate --header --config edgecodedpo/configs/dataset.yaml
+
+# Generate test dataset
+edgecodedpo generate --test
 ```
 
 #### Parameters
 
 - `--config`, `-c`: Path to the configuration file (default: `edgecodedpo/configs/dataset.yaml`)
 - `--output`, `-o`: Path to save the generated dataset (default: `edgecodedpo/data/gen_data`)
+- `--test`, `-t`: Generate dataset for test purposes
+- `--header`, `-h`: Generate function headers only instead of full code
 - `--samples`, `-s`: Number of combinations to sample (default: all combinations)
 - `--batch-size`, `-b`: Number of concurrent API requests (default: 5)
 - `--model`, `-m`: OpenAI model to use (default: `gpt-4o-mini`)
@@ -96,18 +107,17 @@ edgecodedpo generate --config edgecodedpo/configs/dataset.yaml --output data/gen
 edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-Instruct --output edgecodedpo/data/stats
 ```
 
-### Uploading to HuggingFace Hub
+### Managing Datasets on HuggingFace Hub
 
 ```bash
 # Upload a dataset to HuggingFace Hub
 edgecodedpo upload --dataset-path edgecodedpo/data/gen_data/dataset --repo-id yourusername/edgecodedpo
-```
 
-### Downloading Dataset from HuggingFace Hub
-
-```bash
 # Download a dataset from HuggingFace Hub
 edgecodedpo download --dataset-path edgecodedpo/data/repo_data/dataset --repo-id yourusername/edgecodedpo
+
+# Fuse multiple datasets before uploading
+edgecodedpo upload --fuse --repo-id yourusername/edgecodedpo-combined
 ```
 
 ### Training with DPO
@@ -135,7 +145,7 @@ edgecodedpo train train --model Qwen/Qwen2-0.5B-Instruct --dataset edgecodedpo/d
 
 ```bash
 # Evaluate a trained model
-edgecodedpo train evaluate --model edgecodedpo/models/dpo --dataset edgecodedpo/data/gen_data/dataset --output edgecodedpo/models/evaluation
+edgecodedpo train evaluate --model edgecodedpo/models/dpo --dataset edgecodedpo/data/gen_data/dataset --output edgecodedpo/models/evaluation --num-examples 10
 ```
 
 ## Configuration Files
@@ -144,9 +154,18 @@ edgecodedpo train evaluate --model edgecodedpo/models/dpo --dataset edgecodedpo/
 
 The `edgecodedpo/configs/dataset.yaml` file defines domains, tasks, libraries, and code forms used for dataset generation. You can customize this file to generate examples for specific domains or tasks.
 
+A smaller test configuration (`edgecodedpo/configs/dataset_test.yaml`) is also available for quicker iterations.
+
 ### Training Configuration
 
-The `edgecodedpo/configs/training.yaml` file defines settings for DPO training, including model parameters, optimization settings, and training hyperparameters.
+The `edgecodedpo/configs/training.yaml` file defines settings for DPO training, including model parameters, optimization settings, and training hyperparameters. Key sections include:
+
+- Model settings
+- Optimization settings (quantization, LoRA)
+- DPO parameters
+- Training parameters
+- Advanced DPO settings
+- HuggingFace Hub integration
 
 ## Project Structure
 
@@ -159,18 +178,36 @@ EdgeCodeDPO/
 │   │   └── openai_client.py # Async client for OpenAI API
 │   ├── configs/
 │   │   ├── dataset.yaml     # Configuration for dataset generation
+│   │   ├── dataset_test.yaml # Test configuration with fewer combinations
 │   │   └── training.yaml    # Configuration for DPO training
 │   ├── data/
 │   │   ├── dataset_generator.py  # Dataset generation script
-│   │   └── prompt_generator.py   # Prompt creation utilities
-│   └── training/
-│       ├── cli.py           # Training CLI commands
-│       ├── dpo.py           # DPO training functionality
-│       └── integration.py   # Integration with main CLI
+│   │   ├── prompt_generator.py   # Prompt creation utilities
+│   │   └── stats/               # Dataset statistics
+│   ├── training/
+│   │   ├── cli.py              # Training CLI commands
+│   │   ├── dpo.py              # DPO training functionality
+│   │   ├── eval_metrics.py     # Code quality evaluation metrics
+│   │   ├── integration.py      # Integration with main CLI
+│   │   └── visualization.py    # TensorBoard metrics visualization
+│   └── utils/
+│       ├── generated_code_parsing.py  # Code extraction and processing
+│       └── __init__.py        
 ├── pyproject.toml           # Package configuration
-├── requirements.txt         # Python dependencies
 └── README.md                # This file
 ```
+
+## Code Quality Evaluation Metrics
+
+The model evaluation includes several code quality metrics:
+
+- **Type Annotation Coverage**: Percentage of functions with proper type annotations
+- **Docstring Coverage**: Percentage of functions with comprehensive docstrings
+- **Code Complexity**: Average cyclomatic complexity of the code
+- **PEP 8 Compliance**: Adherence to Python style guidelines (using pylint)
+- **Comment Density**: Ratio of comment lines to total lines
+- **Execution Success**: Whether the code executes without errors
+- **Similarity Metrics**: Comparison with chosen and rejected examples
 
 ## Roadmap
 
@@ -178,8 +215,10 @@ EdgeCodeDPO/
 - [x] CLI interface implementation
 - [x] Dataset statistics and analysis tools
 - [x] Direct Preference Optimization (DPO) training
-- [ ] Advanced data quality evaluation and filtering
-- [ ] Model evaluation framework improvements
+- [x] Model evaluation with code quality metrics
+- [x] Training visualization tools
+- [ ] Advanced data quality filtering
+- [ ] Expanded model compatibility
 - [ ] Web interface for dataset exploration
 - [ ] Support for additional model providers
 - [ ] Edge deployment optimizations
@@ -197,6 +236,8 @@ Main dependencies:
 - PyYAML
 - Pydantic Settings
 - AsyncIO and AIOHTTP
+- Matplotlib and TensorBoard
+- Pylint and Radon for code quality metrics
 
 Development dependencies are available through the `[dev]` extra.
 

@@ -9,3 +9,5 @@ edgecodedpo.egg-info
 **/metric_plots
 **/dataset_[0-9].*
 **/stats
+**/comparison_plots
+**/evaluation_plots**
