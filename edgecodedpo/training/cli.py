@@ -418,6 +418,12 @@ def register_dpo_commands(app: typer.Typer) -> None:
         is_test: bool = typer.Option(
             False, "--test", "-t", help="Is the dataset for training or test purposes"
         ),
+        add_prompt_boost: bool = typer.Option(
+            False,
+            "--prompt_boost",
+            "-pb",
+            help="Whether to add prompt engineering boosting.",
+        ),
         output_dir: str = typer.Option(
             "edgecodedpo/models/evaluation",
             "--output",
@@ -463,6 +469,7 @@ def register_dpo_commands(app: typer.Typer) -> None:
                 output_dir=output_dir,
                 num_examples=num_examples,
                 batch_size=batch_size,
+                add_prompt_boost=add_prompt_boost,
             )
 
             console.print(

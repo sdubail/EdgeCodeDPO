@@ -323,6 +323,7 @@ def load_and_evaluate_model(
     max_length: int = 1024,
     num_examples: int = 10,
     batch_size: int = 4,
+    add_prompt_boost: bool = False,
 ) -> None:
     """
     Load a trained model and evaluate it on the dataset.
@@ -335,6 +336,7 @@ def load_and_evaluate_model(
         max_length: Maximum sequence length
         num_examples: Number of examples to evaluate
         batch_size: Number of examples to process in a single batch
+        add_prompt_boost: Whether to add prompt engineering to the base prompts
     """
     # Load model and tokenizer
     try:
@@ -457,7 +459,8 @@ def load_and_evaluate_model(
                 text_prompt = prompt[0].get("content", "")
             else:
                 text_prompt = str(prompt)
-
+            if add_prompt_boost:
+                text_prompt += "Use docstrings and mypy typing."
             valid_inputs.append(text_prompt)
             valid_indices.append(i)
 
