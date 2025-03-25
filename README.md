@@ -14,35 +14,35 @@ EdgeCodeDPO is designed to create high-quality datasets for training and fine-tu
 
 ## Features
 
-### Dataset Generation
+### Dataset generation
 
-- **Two-Stage Pipeline**: Creates pairs of code examples:
+- **Two-Stage pipeline**: Creates pairs of code examples:
   - Stage 1: Generates basic, functional code examples
   - Stage 2: Creates improved versions with proper type annotations, documentation, and best practices
-- **Comprehensive Domain Coverage**: 16+ programming domains with diverse tasks and code structures
+- **Comprehensive domain coverage**: 16+ programming domains with diverse tasks and code structures
 - **Configuration-based**: Domains, tasks, libraries, and code forms defined in YAML files
-- **Asynchronous Processing**: Efficiently processes multiple API requests concurrently
-- **Dataset Analysis**: Tools to analyze token length statistics and distribution
-- **HuggingFace Integration**: Outputs saved in HuggingFace dataset format with push-to-hub support
+- **Asynchronous processing**: Efficiently processes multiple API requests concurrently
+- **Dataset analysis**: Tools to analyze token length statistics and distribution
+- **HuggingFace integration**: Outputs saved in HuggingFace dataset format with push-to-hub support
 - **Header-Only Mode**: Option to generate just function headers for specific use cases
 
 ### DPO Training
 
 - **Direct Preference Optimization**: Fine-tune models using DPO, a more efficient alternative to RLHF
-- **Quantization Support**: Train with 4-bit quantization for memory efficiency
-- **LoRA Support**: Efficient fine-tuning with Low-Rank Adaptation
-- **Flexible Configuration**: YAML-based configuration for training parameters
-- **HuggingFace Integration**: Seamless integration with HuggingFace models and libraries
-- **Model Evaluation**: Tools to evaluate fine-tuned models with metrics for code quality
+- **Quantization support**: Train with 4-bit quantization for memory efficiency
+- **LoRA support**: Efficient fine-tuning with Low-Rank Adaptation
+- **Flexible configuration**: YAML-based configuration for training parameters
+- **HuggingFace integration**: Seamless integration with HuggingFace models and libraries
+- **Model evaluation**: Tools to evaluate fine-tuned models with metrics for code quality
 - **Visualization**: Generate training metric plots from TensorBoard logs
 
 ### CLI Interface
 
-- **Comprehensive Commands**: Easy-to-use command-line interface for all operations
-- **Data Generation**: Generate datasets with customizable parameters
-- **Dataset Statistics**: Analyze token length distributions and other metrics
-- **DPO Training**: Train models with various optimization methods
-- **Model Evaluation**: Evaluate trained models on test examples
+- **Comprehensive commands**: Easy-to-use command-line interface for all operations
+- **Data generation**: Generate datasets with customizable parameters
+- **Dataset statistics**: Analyze token length distributions and other metrics
+- **DPO training**: Train models with various optimization methods
+- **Model evaluation**: Evaluate trained models on test examples
 - **Upload/Download**: Manage datasets on HuggingFace Hub
 
 ## Installation
@@ -72,7 +72,7 @@ HF_KEY=your-huggingface-token
 
 ## Usage
 
-### Generating a Dataset
+### Generating a dataset
 
 ```bash
 # Generate a dataset with default settings
@@ -100,14 +100,14 @@ edgecodedpo generate --test
 - `--system-message`: Optional system message for the API
 - `--no-intermediate`: Don't save intermediate results
 
-### Analyzing Token Length Statistics
+### Analyzing token length statistics
 
 ```bash
 # Generate token length statistics
 edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-Instruct --output edgecodedpo/data/stats
 ```
 
-### Managing Datasets on HuggingFace Hub
+### Managing datasets on HuggingFace Hub
 
 ```bash
 # Upload a dataset to HuggingFace Hub
@@ -127,7 +127,7 @@ edgecodedpo upload --fuse --repo-id yourusername/edgecodedpo-combined
 edgecodedpo train train --model Qwen/Qwen2-0.5B-Instruct --dataset edgecodedpo/data/gen_data/dataset --output edgecodedpo/models/dpo --config edgecodedpo/configs/training.yaml
 ```
 
-#### Training Parameters
+#### Training parameters
 
 - `--model`, `-m`: Base model to use
 - `--dataset`, `-d`: Path to the dataset
@@ -141,22 +141,22 @@ edgecodedpo train train --model Qwen/Qwen2-0.5B-Instruct --dataset edgecodedpo/d
 - `--push-to-hub`: Push model to HuggingFace Hub
 - `--hub-model-id`: HuggingFace Hub model ID
 
-### Evaluating a Trained Model
+### Evaluating a trained model
 
 ```bash
 # Evaluate a trained model
 edgecodedpo train evaluate --model edgecodedpo/models/dpo --dataset edgecodedpo/data/gen_data/dataset --output edgecodedpo/models/evaluation --num-examples 10
 ```
 
-## Configuration Files
+## Configuration files
 
-### Dataset Configuration
+### Dataset configuration
 
 The `edgecodedpo/configs/dataset.yaml` file defines domains, tasks, libraries, and code forms used for dataset generation. You can customize this file to generate examples for specific domains or tasks.
 
 A smaller test configuration (`edgecodedpo/configs/dataset_test.yaml`) is also available for quicker iterations.
 
-### Training Configuration
+### Training configuration
 
 The `edgecodedpo/configs/training.yaml` file defines settings for DPO training, including model parameters, optimization settings, and training hyperparameters. Key sections include:
 
@@ -167,7 +167,7 @@ The `edgecodedpo/configs/training.yaml` file defines settings for DPO training, 
 - Advanced DPO settings
 - HuggingFace Hub integration
 
-## Project Structure
+## Project structure
 
 ```
 EdgeCodeDPO/
@@ -197,17 +197,17 @@ EdgeCodeDPO/
 └── README.md                # This file
 ```
 
-## Code Quality Evaluation Metrics
+## Code quality evaluation metrics
 
 The model evaluation includes several code quality metrics:
 
-- **Type Annotation Coverage**: Percentage of functions with proper type annotations
-- **Docstring Coverage**: Percentage of functions with comprehensive docstrings
-- **Code Complexity**: Average cyclomatic complexity of the code
-- **PEP 8 Compliance**: Adherence to Python style guidelines (using pylint)
-- **Comment Density**: Ratio of comment lines to total lines
-- **Execution Success**: Whether the code executes without errors
-- **Similarity Metrics**: Comparison with chosen and rejected examples
+- **Type annotation coverage**: Percentage of functions with proper type annotations
+- **Docstring coverage**: Percentage of functions with comprehensive docstrings
+- **Code complexity**: Average cyclomatic complexity of the code
+- **PEP 8 compliance**: Adherence to Python style guidelines (using pylint)
+- **Comment density**: Ratio of comment lines to total lines
+- **Execution success**: Whether the code executes without errors
+- **Similarity metrics**: Comparison with chosen and rejected examples
 
 ## Roadmap
 
@@ -217,11 +217,6 @@ The model evaluation includes several code quality metrics:
 - [x] Direct Preference Optimization (DPO) training
 - [x] Model evaluation with code quality metrics
 - [x] Training visualization tools
-- [ ] Advanced data quality filtering
-- [ ] Expanded model compatibility
-- [ ] Web interface for dataset exploration
-- [ ] Support for additional model providers
-- [ ] Edge deployment optimizations
 
 ## Dependencies
 
@@ -244,7 +239,3 @@ Development dependencies are available through the `[dev]` extra.
 ## Contributing
 
 As this project is in early development, contributions are welcome but the codebase may change significantly. Please reach out before investing significant time in contributions.
-
-## License
-
-[MIT License](LICENSE)
