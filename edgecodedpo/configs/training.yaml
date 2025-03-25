@@ -26,7 +26,7 @@ optimization:
 
 # DPO settings
 dpo:
-  beta: 0.1                         # Controls deviation from reference model
+  beta: 0.3                        # Controls deviation from reference model
   loss_type: "sigmoid"              # Loss type (sigmoid, hinge, ipo, etc.)
   reference_free: false             # Whether to use reference-free DPO
   label_smoothing: 0.0              # Label smoothing (for robust DPO)
