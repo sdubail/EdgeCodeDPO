@@ -211,12 +211,14 @@ The model evaluation includes several code quality metrics:
 
 ## Roadmap
 
-- [x] Initial dataset generation pipeline
+- [x] Dataset generation pipeline for trai and test types.
 - [x] CLI interface implementation
 - [x] Dataset statistics and analysis tools
 - [x] Direct Preference Optimization (DPO) training
+- [x] Supervised Fine Tuning (SFT) training
 - [x] Model evaluation with code quality metrics
 - [x] Training visualization tools
+- [x] Evaluation visualization tools
 
 ## Dependencies
 
