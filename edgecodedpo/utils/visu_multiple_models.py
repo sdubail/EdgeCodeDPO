@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from tensorboard.backend.event_processing import event_accumulator
 
-# Configuration
-# Dictionary mapping model paths to display names for the legend
 MODEL_PATHS = {
     "edgecodedpo/models/dpo_qwen15epochs_longds/logs": "Qwen0.5 / Full dataset",
     "edgecodedpo/models/dpo_gemma_15epochs_fullDS/logs": "Gemma2b / Full dataset",
@@ -22,10 +20,8 @@ MODEL_PATHS = {
     "edgecodedpo/models/dpo_deepseek_15epochs/logs": "DeepseekCoder1b / Half dataset",
 }
 
-# Output directory for plots
 OUTPUT_DIR = "comparison_plots"
 
-# Define default metric pairs for visualization
 METRIC_PAIRS = {
     "Loss": ["train/loss", "eval/loss"],
     "Gradient Norm": ["train/grad_norm"],
@@ -54,7 +50,6 @@ METRIC_PAIRS = {
     ],
 }
 
-# Plot settings
 DPI = 150
 SAVE_INDIVIDUAL = True
 SAVE_COMBINED = True
@@ -79,7 +74,7 @@ def load_data_from_event_file(
     ea = event_accumulator.EventAccumulator(
         event_file,
         size_guidance={
-            event_accumulator.SCALARS: 0,  # Load all scalar events
+            event_accumulator.SCALARS: 0,
         },
     )
     ea.Reload()
@@ -113,7 +108,6 @@ def combine_event_data(
                 combined_data[name] = []
             combined_data[name].extend(values)
 
-    # Sort data by step for each metric
     for name in combined_data:
         combined_data[name].sort(key=lambda x: x[0])
 
@@ -148,19 +142,15 @@ def load_model_data(
 
 def setup_plot_style():
     """Set up the global plot style with Helvetica font and other settings."""
-    # Try to use Helvetica font
     try:
         plt.rcParams["font.family"] = "Helvetica"
     except:
-        # If Helvetica is not available, try Arial (similar to Helvetica)
         try:
             plt.rcParams["font.family"] = "Arial"
         except:
-            # Fallback to sans-serif if neither is available
             plt.rcParams["font.family"] = "sans-serif"
             plt.rcParams["font.sans-serif"] = ["Helvetica", "Arial"]
 
-    # Set font sizes
     plt.rcParams["font.size"] = FONT_SIZE
     plt.rcParams["axes.titlesize"] = FONT_SIZE
     plt.rcParams["axes.labelsize"] = FONT_SIZE
@@ -174,34 +164,28 @@ def create_custom_legend(ax, model_colors, split_styles, show_legend=True):
     if not show_legend:
         return
 
-    # Create legend for models (colors)
     model_handles = [
         Line2D([0], [0], color=color, lw=LINE_WIDTH) for color in model_colors.values()
     ]
     model_labels = list(model_colors.keys())
 
-    # Create legend for splits (line styles)
     split_handles = []
     split_labels = []
 
-    # Use black color for split style indicators
     for split_name, style in split_styles.items():
-        if split_name:  # Skip if empty string
+        if split_name:
             split_handles.append(
                 Line2D([0], [0], color="black", linestyle=style, lw=LINE_WIDTH)
             )
             split_labels.append(split_name)
 
-    # Add model legend on the top right
     if model_handles:
         legend1 = ax.legend(
             model_handles, model_labels, loc="upper right", title="Models"
         )
         ax.add_artist(legend1)
 
-    # Add split legend below model legend
     if split_handles:
-        # Calculate position to place below the model legend
         bbox = ax.get_position()
         legend2 = ax.legend(
             split_handles,
@@ -237,15 +221,12 @@ def create_multi_model_visualizations(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Set up plot style
     setup_plot_style()
 
-    # Flatten the list of metrics to load
     all_metrics = []
     for metrics in metric_pairs.values():
         all_metrics.extend(metrics)
 
-    # Load data for all models
     model_data = load_model_data(model_paths, all_metrics)
 
     if not model_data:
@@ -254,22 +235,18 @@ def create_multi_model_visualizations(
 
     print(f"\nGenerating plots for {len(model_data)} models")
 
-    # Get a colormap for different models
     colors = list(mcolors.TABLEAU_COLORS)
     model_colors = {
         model: colors[i % len(colors)] for i, model in enumerate(model_data.keys())
     }
 
-    # Line styles for train vs eval
     split_styles = {"Train": "-", "Eval": "--"}
 
-    # Create individual plots for each metric group
     if save_individual:
         for title, metrics in metric_pairs.items():
             plt.figure(figsize=(12, 6))
             ax = plt.gca()
 
-            # Check if any model has this metric
             has_data = False
             model_in_plot = set()
             split_in_plot = set()
@@ -282,7 +259,6 @@ def create_multi_model_visualizations(
                         has_data = True
                         steps, values = zip(*data[metric], strict=False)
 
-                        # Determine split (train/eval)
                         if "train/" in metric:
                             split = "Train"
                             style = split_styles["Train"]
@@ -297,7 +273,6 @@ def create_multi_model_visualizations(
 
                         model_in_plot.add(model_name)
 
-                        # Plot without adding to legend (we'll create custom legend)
                         ax.plot(
                             steps,
                             values,
@@ -307,7 +282,6 @@ def create_multi_model_visualizations(
                         )
 
             if has_data:
-                # Create filtered dictionaries for models and splits actually in this plot
                 plot_model_colors = {
                     model: model_colors[model] for model in model_in_plot
                 }
@@ -315,7 +289,6 @@ def create_multi_model_visualizations(
                     split: split_styles[split] for split in split_in_plot if split
                 }
 
-                # Only show legend on the Loss plot
                 show_legend = title == "Loss"
                 create_custom_legend(
                     ax, plot_model_colors, plot_split_styles, show_legend
@@ -336,7 +309,6 @@ def create_multi_model_visualizations(
 
             plt.close()
 
-    # Create a combined figure with all subplots
     if save_combined:
         n_plots = len(metric_pairs)
         has_any_data = False
@@ -358,7 +330,6 @@ def create_multi_model_visualizations(
                         has_any_data = True
                         steps, values = zip(*data[metric], strict=False)
 
-                        # Determine split (train/eval)
                         if "train/" in metric:
                             split = "Train"
                             style = split_styles["Train"]
@@ -373,7 +344,6 @@ def create_multi_model_visualizations(
 
                         model_in_plot.add(model_name)
 
-                        # Plot without adding to legend (we'll create custom legend)
                         ax.plot(
                             steps,
                             values,
@@ -383,7 +353,6 @@ def create_multi_model_visualizations(
                         )
 
             if has_plot_data:
-                # Create filtered dictionaries for models and splits actually in this plot
                 plot_model_colors = {
                     model: model_colors[model] for model in model_in_plot
                 }
@@ -391,7 +360,6 @@ def create_multi_model_visualizations(
                     split: split_styles[split] for split in split_in_plot if split
                 }
 
-                # Only show legend on the Loss plot
                 show_legend = title == "Loss"
                 create_custom_legend(
                     ax, plot_model_colors, plot_split_styles, show_legend
@@ -405,9 +373,7 @@ def create_multi_model_visualizations(
                 ax.set_title(f"{title} - No data available")
 
         if has_any_data:
-            # Adjust layout to make room for legends
             plt.tight_layout()
-            # Add extra space between subplots for legends
             plt.subplots_adjust(hspace=0.4)
             plt.savefig(
                 os.path.join(output_dir, "combined_metrics.png"),
@@ -424,7 +390,6 @@ def create_multi_model_visualizations(
 
 
 if __name__ == "__main__":
-    # You can modify these variables directly in the script instead of using argparse
     create_multi_model_visualizations(
         model_paths=MODEL_PATHS,
         output_dir=OUTPUT_DIR,
