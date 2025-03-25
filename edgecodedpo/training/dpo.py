@@ -1,11 +1,3 @@
-"""
-DPO training module for EdgeCodeDPO.
-
-This module provides functionality to train language models using Direct Preference Optimization (DPO)
-as described in the paper "Direct Preference Optimization: Your Language Model is Secretly a Reward Model"
-by Rafailov et al.
-"""
-
 import json
 import os
 from typing import Any
@@ -56,7 +48,7 @@ def load_model_and_tokenizer(
     Returns:
         tuple: (model, tokenizer)
     """
-    # Set up quantization if specified
+    # quantization if specified
     bnb_config = None
     if quantization_config:
         bnb_config = BitsAndBytesConfig(
@@ -75,7 +67,7 @@ def load_model_and_tokenizer(
             bnb_4bit_quant_type=quantization_config.get("bnb_4bit_quant_type", "nf4"),
         )
 
-    # Load tokenizer
+    # load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
         model_name_or_path,
         padding_side="right",
@@ -85,7 +77,6 @@ def load_model_and_tokenizer(
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    # Load model with quantization if specified
     model_kwargs = {
         "trust_remote_code": True,
         "device_map": "auto",
@@ -95,12 +86,11 @@ def load_model_and_tokenizer(
         model_kwargs["quantization_config"] = bnb_config
 
     if not is_already_lora:
-        # Load model
         model = AutoModelForCausalLM.from_pretrained(model_name_or_path, **model_kwargs)
 
         model.config.use_cache = False
 
-        # Apply LoRA if specified
+        # apply LoRA if specified
         if lora_config:
             peft_config = LoraConfig(
                 r=lora_config.get("r", 16),
@@ -116,7 +106,7 @@ def load_model_and_tokenizer(
         model = AutoPeftModelForCausalLM.from_pretrained(
             model_name_or_path, **model_kwargs
         )
-        # Load the adapter a second time, with a different name, which will be our reference model.
+        # load the adapter a second time, with a different name, which will be our reference model.
         model.load_adapter(model_name_or_path, adapter_name="reference")
 
     return model, tokenizer
@@ -141,23 +131,17 @@ def preprocess_dataset(
     Returns:
         Dataset: Preprocessed dataset
     """
-    # Check if the dataset_path is a local path
     if os.path.exists(dataset_path):
-        # Load dataset from local path
         print(f"Loading dataset from local path: {dataset_path}")
         dataset = load_from_disk(dataset_path)
     else:
-        # Attempt to load from HuggingFace Hub
         print(f"Attempting to load dataset from HuggingFace Hub: {dataset_path}")
         try:
-            # Check if a specific split is specified (e.g., "dataset_name:train")
             if ":" in dataset_path:
                 repo_id, split = dataset_path.split(":", 1)
                 dataset = load_dataset(repo_id, split=split)
             else:
-                # Try loading the default split
                 dataset = load_dataset(dataset_path)
-                # If dataset is a DatasetDict with multiple splits, prefer 'train'
                 if hasattr(dataset, "keys") and "train" in dataset:
                     dataset = dataset["train"]
         except Exception as e:
@@ -165,20 +149,15 @@ def preprocess_dataset(
                 f"Failed to load dataset from HuggingFace Hub: {dataset_path}. Error: {e!s}"
             )
 
-    # Make sure it has the expected format with chosen and rejected samples
     required_columns = ["chosen", "rejected"]
     if not all(col in dataset.column_names for col in required_columns):
         raise ValueError(
             f"Dataset must contain columns: {required_columns}. Found: {dataset.column_names}"
         )
 
-    # If the dataset is already preprocessed with the right format, return it
     if "chosen" in dataset.column_names and isinstance(dataset["chosen"][0], list):
         print("Dataset already in the expected format. Skipping preprocessing.")
         return dataset
-
-    # Apply tokenization/formatting if needed
-    # Here you would implement any specific preprocessing steps needed for your dataset
 
     return dataset
 
@@ -208,13 +187,11 @@ def train_dpo(
         push_to_hub: Whether to push the model to HuggingFace Hub
         hub_model_id: ID for the HuggingFace repository
     """
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
     model_adapter_name = "train" if is_already_lora else None
     ref_adapter_name = "reference" if is_already_lora else None
 
-    # Set up DPO configuration
     training_args = DPOConfig(
         output_dir=output_dir,
         num_train_epochs=int(dpo_config.get("num_train_epochs", 3)),
@@ -249,7 +226,7 @@ def train_dpo(
         hub_token=settings.HF_KEY if push_to_hub else None,
     )
 
-    # Load model and tokenizer
+    # load model and tokenizer
     model, tokenizer = load_model_and_tokenizer(
         model_name_or_path=model_name_or_path,
         dpo_config=training_args,
@@ -258,7 +235,7 @@ def train_dpo(
         is_already_lora=is_already_lora,
     )
 
-    # Load and preprocess dataset
+    # load and preprocess dataset
     dataset = preprocess_dataset(
         dataset_path=dataset_path,
         tokenizer=tokenizer,
@@ -266,7 +243,6 @@ def train_dpo(
         num_proc=dpo_config.get("dataset_num_proc", 4),
     )
 
-    # Split dataset into train/eval if not already done
     if "train" not in dataset and "test" not in dataset:
         dataset = dataset.train_test_split(test_size=dpo_config.get("eval_split", 0.1))
         train_dataset = dataset["train"]
@@ -275,7 +251,6 @@ def train_dpo(
         train_dataset = dataset.get("train", dataset)
         eval_dataset = dataset.get("test", None)
 
-    # Initialize DPO trainer
     trainer = DPOTrainer(
         model=model,
         args=training_args,
@@ -284,18 +259,16 @@ def train_dpo(
         eval_dataset=eval_dataset,
     )
 
-    # Train model
+    # train model
     train_result = trainer.train()
 
-    # Save the trained model
     trainer.save_model(output_dir)
 
-    # Log and save metrics
     metrics = train_result.metrics
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
 
-    # Generate visualization plots from TensorBoard logs
+    # visualization plots from TensorBoard logs
     log_dir = os.path.join(output_dir, "logs")
     viz_dir = os.path.join(output_dir, "visualizations")
     try:
@@ -305,7 +278,6 @@ def train_dpo(
     except Exception as e:
         print(f"Warning: Could not generate visualizations: {e}")
 
-    # Push to hub if requested
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
         print(
@@ -338,46 +310,40 @@ def load_and_evaluate_model(
         batch_size: Number of examples to process in a single batch
         add_prompt_boost: Whether to add prompt engineering to the base prompts
     """
-    # Load model and tokenizer
+    # load model and tokenizer
     try:
-        # Try loading as a PEFT model first
+        # try loading as a PEFT model first
         model = AutoPeftModelForCausalLM.from_pretrained(
             model_path, device_map="auto", trust_remote_code=True
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
     except Exception:
-        # Fall back to standard model loading
+        # fall back to standard model loading
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map="auto", trust_remote_code=True
         )
         tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     # Load dataset
-    # Check if the dataset_path is a local path
     if os.path.exists(dataset_path):
-        # Load dataset from local path
         print(f"Loading dataset from local path: {dataset_path}")
         dataset = load_from_disk(dataset_path)
     else:
-        # Attempt to load from HuggingFace Hub
         print(f"Attempting to load dataset from HuggingFace Hub: {dataset_path}")
         try:
-            # Check if a specific split is specified (e.g., "dataset_name:train")
             if ":" in dataset_path:
                 repo_id, split = dataset_path.split(":", 1)
                 dataset = load_dataset(repo_id, split=split)
             else:
-                # Try loading the default split
                 dataset = load_dataset(dataset_path)
         except Exception as e:
             raise ValueError(
                 f"Failed to load dataset from HuggingFace Hub: {dataset_path}. Error: {e!s}"
             )
 
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
-    # Select evaluation examples
+    # select evaluation examples
     if "test" in dataset:
         eval_dataset = dataset["test"].select(
             range(min(num_examples, dataset["test"].num_rows))
@@ -387,7 +353,7 @@ def load_and_evaluate_model(
             range(min(num_examples, dataset["train"].num_rows))
         )
 
-    # Initialize overall metrics dictionary
+    # initialize overall metrics dictionary
     metrics = {
         "type_annotation_coverage": [],
         "comment_density": [],
@@ -399,7 +365,7 @@ def load_and_evaluate_model(
         "similarity_to_rejected": [],
     }
 
-    # Initialize metrics by prompt type dictionary if this is a test dataset
+    # initialize metrics by prompt type dictionary if this is a test dataset
     prompt_types_metrics = {}
     prompt_types_counts = {}
 
@@ -412,11 +378,9 @@ def load_and_evaluate_model(
         batch = eval_dataset[batch_start:batch_end]
 
         # Get prompts and prompt types from the batch
-        # Note: batch is a dict with column names as keys and lists of values
         batch_prompts = batch.get("prompt", [])
         batch_prompt_types = batch.get("prompt_type", [None] * len(batch_prompts))
 
-        # Process each example in the batch
         valid_inputs = []
         valid_indices = []
 
@@ -429,7 +393,7 @@ def load_and_evaluate_model(
             if not is_test and not prompt_type:
                 prompt_type = "default"
 
-            # Initialize metrics for this prompt type if we haven't seen it before
+            # initialize metrics for this prompt type if we haven't seen it before
             if prompt_type and prompt_type not in prompt_types_metrics:
                 prompt_types_metrics[prompt_type] = {
                     "type_annotation_coverage": [],
@@ -446,11 +410,9 @@ def load_and_evaluate_model(
             if prompt_type:
                 prompt_types_counts[prompt_type] += 1
 
-            # Skip examples without prompts
             if not prompt:
                 continue
 
-            # Extract text prompt from the conversation format
             if (
                 isinstance(prompt, list)
                 and len(prompt) > 0
@@ -464,16 +426,15 @@ def load_and_evaluate_model(
             valid_inputs.append(text_prompt)
             valid_indices.append(i)
 
-        # Skip batch if no valid inputs
         if not valid_inputs:
             continue
 
-        # Tokenize all valid prompts in the batch
+        # tokenize all valid prompts in the batch
         batch_inputs = tokenizer(valid_inputs, return_tensors="pt", padding=True).to(
             model.device
         )
         print(f"Input length:{len(batch_inputs.input_ids)}")
-        # Generate completions for the batch
+        # generate completions for the batch
         batch_outputs = model.generate(
             input_ids=batch_inputs.input_ids,
             attention_mask=batch_inputs.attention_mask,
@@ -482,7 +443,7 @@ def load_and_evaluate_model(
             temperature=0.7,
         )
         print(f"Output length:{len(batch_outputs)}")
-        # Process each generated output
+        # process each generated output
         for j, idx in enumerate(valid_indices):
             prompt = batch_prompts[idx]
             prompt_type = (
@@ -499,7 +460,6 @@ def load_and_evaluate_model(
                 else None
             )
 
-            # Decode the generated output (each output is for a single example)
             output_ids = batch_outputs[j]
             generated_code = tokenizer.decode(output_ids, skip_special_tokens=True)
 
@@ -519,19 +479,19 @@ def load_and_evaluate_model(
                 "pep8_compliance": [],
             }
             for code_block in preprocess_blocks:
-                # Evaluate code quality
+                # evaluate code quality
                 code_metrics = evaluate_code_quality(code_block)
                 for key, value in code_metrics.items():
                     block_metrics[key].append(value)
 
-            # Evaluate functional correctness
+            # evaluate functional correctness
             execution_result = execute_code(full_script)
             if execution_result["success"]:
                 metrics["execution_success_rate"] += 1
                 if prompt_type:
                     prompt_types_metrics[prompt_type]["execution_success_rate"] += 1
 
-            # Averaging metrics across code blocks
+            # averaging metrics across code blocks
             for metric_name, metric_value in block_metrics.items():
                 if isinstance(metric_value, list):
                     filtered_values = list(
@@ -578,7 +538,6 @@ def load_and_evaluate_model(
             else:
                 similarity_to_rejected = None
 
-            # Save the results
             results.append(
                 {
                     "prompt": prompt,
@@ -594,7 +553,7 @@ def load_and_evaluate_model(
                 }
             )
     print(f"Total result length:{len(results)}")
-    # Calculate aggregate metrics for overall results
+    # aggregate metrics for overall results
     aggregated_metrics = {}
     for key in metrics:
         if key == "execution_success_rate":
@@ -604,7 +563,7 @@ def load_and_evaluate_model(
         else:
             aggregated_metrics[key] = None
 
-    # Calculate aggregate metrics for each prompt type
+    # aggregate metrics for each prompt type
     aggregated_prompt_type_metrics = {}
     for p_type, p_metrics in prompt_types_metrics.items():
         aggregated_prompt_type_metrics[p_type] = {}
@@ -632,12 +591,11 @@ def load_and_evaluate_model(
             return [convert_numpy(item) for item in obj]
         return obj  # Return as-is if no conversion is needed
 
-    # Convert all results and metrics
+    # convert all results and metrics
     results = convert_numpy(results)
     aggregated_metrics = convert_numpy(aggregated_metrics)
     aggregated_prompt_type_metrics = convert_numpy(aggregated_prompt_type_metrics)
 
-    # Save results to a file
     with open(os.path.join(output_dir, "eval_results.json"), "w") as f:
         json.dump(
             {
@@ -649,7 +607,6 @@ def load_and_evaluate_model(
             indent=2,
         )
 
-    # Print summary of evaluation results
     print(
         f"Evaluation completed. Results saved to: {os.path.join(output_dir, 'eval_results.json')}"
     )

@@ -1,7 +1,3 @@
-"""
-Add DPO training commands to the EdgeCodeDPO CLI with YAML configuration support.
-"""
-
 import os
 from typing import Any
 
@@ -97,7 +93,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "-c",
             help="Path to the training configuration file",
         ),
-        # Expose only a few critical parameters as CLI overrides
         epochs: int | None = typer.Option(
             None,
             "--epochs",
@@ -145,40 +140,28 @@ def register_dpo_commands(app: typer.Typer) -> None:
         """
         Train a model using Direct Preference Optimization (DPO).
         """
-        # Load the training configuration
         config = load_training_config(config_file)
 
-        # Get model name from config if not provided
         if model_name_or_path is None:
             model_name_or_path = get_config_value(
                 config, "model", "name", default="Qwen/Qwen2-0.5B-Instruct"
             )
-
-        # Determine quantization settings from config
         use_quantization = get_config_value(
             config, "optimization", "quantization", "enabled", default=False
         )
-
-        # Determine LoRA settings from config
         use_lora = get_config_value(
             config, "optimization", "lora", "enabled", default=False
         )
-
-        # Get or override epochs from config
         num_epochs = (
             epochs
             if epochs is not None
             else get_config_value(config, "training", "num_train_epochs", default=3)
         )
-
-        # Get or override learning rate from config
         lr = (
             learning_rate
             if learning_rate is not None
             else get_config_value(config, "training", "learning_rate", default=5e-5)
         )
-
-        # Get or override batch size from config
         bs = (
             batch_size
             if batch_size is not None
@@ -186,29 +169,21 @@ def register_dpo_commands(app: typer.Typer) -> None:
                 config, "training", "per_device_train_batch_size", default=4
             )
         )
-
-        # Get or override beta from config
         dpo_beta = (
             beta
             if beta is not None
             else get_config_value(config, "dpo", "beta", default=0.1)
         )
-
-        # Get or override loss type from config
         dpo_loss_type = (
             loss_type
             if loss_type is not None
             else get_config_value(config, "dpo", "loss_type", default="sigmoid")
         )
-
-        # Get or override push to hub from config
         push_to_hub_enabled = (
             push_to_hub
             if push_to_hub is not None
             else get_config_value(config, "hub", "push_to_hub", default=False)
         )
-
-        # Get or override hub model ID from config
         hub_id = (
             hub_model_id
             if hub_model_id is not None
@@ -253,7 +228,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
         if push_to_hub_enabled and hub_id:
             console.print(f"  Hub model ID: [cyan]{hub_id}[/cyan]")
 
-        # Prepare DPO config from the YAML config
         dpo_config = {
             "num_train_epochs": num_epochs,
             "learning_rate": lr,
@@ -293,7 +267,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "dataset_num_proc": get_config_value(
                 config, "training", "dataset_num_proc", default=4
             ),
-            # Advanced DPO settings
             "reference_free": get_config_value(
                 config, "dpo", "reference_free", default=False
             ),
@@ -303,7 +276,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
             "generate_during_eval": get_config_value(
                 config, "dpo", "generate_during_eval", default=True
             ),
-            # Advanced sync settings
             "sync_ref_model": get_config_value(
                 config, "advanced_dpo", "sync_ref_model", default=False
             ),
@@ -324,7 +296,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
             ),
         }
 
-        # Quantization config from the YAML config
         quantization_config = None
         if use_quantization:
             quantization_config = {
@@ -354,7 +325,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
                 ),
             }
 
-        # LoRA config from the YAML config
         lora_config = None
         if use_lora:
             lora_config = {
@@ -371,7 +341,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
             }
 
         try:
-            # Train model
             train_dpo(
                 model_name_or_path=model_name_or_path,
                 dataset_path=dataset_path,
@@ -461,7 +430,6 @@ def register_dpo_commands(app: typer.Typer) -> None:
         console.print(f"  Number of examples: [cyan]{num_examples}[/cyan]")
 
         try:
-            # Evaluate model
             load_and_evaluate_model(
                 model_path=model_path,
                 dataset_path=dataset_path,

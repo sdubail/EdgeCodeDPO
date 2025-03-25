@@ -15,6 +15,14 @@ from matplotlib.lines import Line2D
 # Configuration
 # Dictionary mapping model paths to display names and model type (base or fine-tuned)
 MODEL_PATHS = {
+    "edgecodedpo/models/evaluation/eval_results_qwen_15epochs_fullDS_full_test_promptboost.json": {
+        "name": "Qwen0.5B-dpo + prompt eng.",
+        "type": "fine-tuned",
+    },
+    "edgecodedpo/models/evaluation/eval_results_qwen_full_test_promptboost.json": {
+        "name": "Qwen0.5B-base + prompt eng.",
+        "type": "base",
+    },
     # "edgecodedpo/models/evaluation/eval_results_qwen15epochs_fullDS_full_test copy.json": {
     #     "name": "Qwen0.5B-dpo",
     #     "type": "fine-tuned",
@@ -23,14 +31,14 @@ MODEL_PATHS = {
     #     "name": "Qwen0.5B-base",
     #     "type": "base",
     # },
-    "edgecodedpo/models/evaluation/eval_results_gemma15epochs_fullDS_full_test.json": {
-        "name": "Gemma2B-dpo",
-        "type": "fine-tuned",
-    },
-    "edgecodedpo/models/evaluation/eval_results_gemma_full_test.json": {
-        "name": "Gemma2B-base",
-        "type": "base",
-    },
+    # "edgecodedpo/models/evaluation/eval_results_gemma15epochs_fullDS_full_test.json": {
+    #     "name": "Gemma2B-dpo",
+    #     "type": "fine-tuned",
+    # },
+    # "edgecodedpo/models/evaluation/eval_results_gemma_full_test.json": {
+    #     "name": "Gemma2B-base",
+    #     "type": "base",
+    # },
 }
 # Output directory for plots
 OUTPUT_DIR = "evaluation_plots"

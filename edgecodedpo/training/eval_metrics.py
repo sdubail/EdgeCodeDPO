@@ -18,22 +18,14 @@ def evaluate_code_quality(code: str) -> dict[str, float | None]:
     Evaluate the quality of the generated code.
     """
     try:
-        # Parse the code into an AST
+        # parse the code into an AST
         tree = safe_parse_code(code)
 
-        # Calculate type annotation coverage
+        # calculate metrics
         type_annotation_coverage = calculate_type_annotation_coverage(tree)
-
-        # Calculate docstring coverage
         docstring_coverage = calculate_docstring_coverage(tree)
-
-        # Calculate code complexity
         code_complexity = calculate_code_complexity(tree)
-
-        # Check PEP 8 compliance
         pep8_compliance = check_pep8_compliance(code)
-
-        # Calculate comment density
         comment_density = calculate_comment_density(code)
 
         return {
@@ -128,7 +120,7 @@ def calculate_code_complexity(tree: ast.AST) -> float | None:
     Calculate the average cyclomatic complexity of the code.
     """
     try:
-        # Calculate cyclomatic complexity for each function/method in the AST
+        # calculate cyclomatic complexity for each function/method in the AST
         complexities = [func.complexity for func in cc_visit_ast(tree)]
         return np.mean(complexities) if complexities else 0.0
     except Exception as e:
@@ -160,11 +152,11 @@ def check_pep8_compliance(code: str) -> float:
     float: A compliance score between 0.0 (poor) and 1.0 (perfect).
     """
     try:
-        # Run pylint and capture the score
+        # run pylint and capture the score
         reporter = TextReporter()
         Run([code], reporter=reporter, do_exit=False)
         score = reporter.linter.stats["global_note"]
-        return max(0.0, score / 10.0)  # Normalize to [0, 1]
+        return max(0.0, score / 10.0)  # normalize to [0, 1]
     except Exception:
         return None
 
@@ -198,7 +190,7 @@ def execute_code(code: str) -> dict[str, Any]:
     Execute the generated code and check for errors.
     """
     try:
-        # Execute the code and capture the output
+        # execute the code and capture the output
         result = subprocess.run(
             ["python", "-c", code], capture_output=True, text=True, timeout=10
         )
@@ -220,7 +212,6 @@ def calculate_code_similarity(code1: str, code2: str) -> float:
     tokenizer.pad_token = tokenizer.eos_token
     model = AutoModel.from_pretrained("gpt2")
 
-    # Tokenize & pad to same length
     inputs = tokenizer(
         [code1, code2],
         return_tensors="pt",
@@ -233,7 +224,7 @@ def calculate_code_similarity(code1: str, code2: str) -> float:
     with torch.no_grad():
         outputs = model(**inputs).last_hidden_state
 
-    # Take mean over sequence dimension to get fixed-size vector
+    # take mean over sequence dimension to get fixed-size vector
     embeddings1 = outputs[0].mean(dim=0).numpy()
     embeddings2 = outputs[1].mean(dim=0).numpy()
 

@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
 
-# Define default metric pairs for visualization
+# define default metric pairs for visualization
 METRIC_PAIRS = {
     "Loss": ["train/loss", "eval/loss"],
     "Gradient Norm": ["train/grad_norm"],
@@ -96,7 +96,7 @@ def combine_event_data(
 def create_visualizations(
     log_dir: str,
     output_dir: str,
-    metric_pairs: dict[str, list[str]] = None,
+    metric_pairs: dict[str, list[str]] | None = None,
     save_individual: bool = True,
     save_combined: bool = True,
     dpi: int = 150,
@@ -118,17 +118,14 @@ def create_visualizations(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Flatten the list of metrics to load
     all_metrics = []
     for metrics in metric_pairs.values():
         all_metrics.extend(metrics)
 
     try:
-        # Find and load the event files
         event_files = find_event_files(log_dir)
         print(f"Found {len(event_files)} event files")
 
-        # Load and combine data from all event files
         data = combine_event_data(event_files, all_metrics)
 
         # Create individual plots
@@ -206,7 +203,6 @@ def create_visualizations(
         print(f"Error generating visualizations: {e}")
 
 
-# CLI entry point for standalone use
 def main():
     import argparse
 

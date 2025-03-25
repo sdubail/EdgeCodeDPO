@@ -98,12 +98,10 @@ class OpenAIAsyncClient:
         """
         await self._wait_for_rate_limit()
 
-        # Prepare the messages in the format expected by the API
         api_messages: list[ChatCompletionMessageParam] = [
             {"role": msg["role"], "content": msg["content"]} for msg in messages
         ]
 
-        # Set up response format for JSON mode
         api_response_format = None
         if json_mode:
             api_response_format = {"type": "json_object"}
@@ -111,7 +109,7 @@ class OpenAIAsyncClient:
             api_response_format = response_format
 
         try:
-            # Make the API call
+            # API call
             completion = await self.client.chat.completions.create(
                 model=model or self.model,
                 messages=api_messages,
@@ -129,13 +127,10 @@ class OpenAIAsyncClient:
                 tool_choice=tool_choice,
             )  # type:ignore
 
-            # Convert the response to a dictionary
             response_dict = completion.model_dump()
             return response_dict
 
         except Exception as e:
-            # The OpenAI library handles retries internally based on the max_retries parameter
-            # Re-raise the exception after all retries are exhausted
             raise Exception(f"OpenAI API Error after {self.max_retries} retries: {e!s}")
 
     async def process_batch(

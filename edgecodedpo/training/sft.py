@@ -37,31 +37,18 @@ def preprocess_sft_dataset(
     Returns:
         A tokenized Dataset suitable for SFT.
     """
-    # ---------------------------------------------------------------------
-    # 1A. Load the dataset from disk or from the HF Hub
-    # ---------------------------------------------------------------------
     if os.path.exists(dataset_path):
         dataset = load_from_disk(dataset_path)
     else:
-        # Attempt to load from HuggingFace Hub
         if ":" in dataset_path:
             repo_id, split = dataset_path.split(":", 1)
             dataset = load_dataset(repo_id, split=split)
         else:
             dataset_obj = load_dataset(dataset_path)
-            # If the dataset is a DatasetDict with multiple splits, prefer 'train'
             if hasattr(dataset_obj, "keys") and "train" in dataset_obj:
                 dataset = dataset_obj["train"]
             else:
                 dataset = dataset_obj
-
-    # ---------------------------------------------------------------------
-    # 1B. Create the "text" to be used for training from 'prompt' + 'chosen'
-    # ---------------------------------------------------------------------
-    # In SFT, train the model to produce the chosen answer,
-    # potentially conditioned on the prompt. If your dataset has columns:
-    #   - 'prompt'
-    #   - 'chosen' (the better response)
 
     def build_text(example):
         prompt = example.get("prompt", "")[0]["content"]
@@ -73,9 +60,6 @@ def preprocess_sft_dataset(
         else:
             return chosen
 
-    # ---------------------------------------------------------------------
-    # 1C. Tokenize each sample
-    # ---------------------------------------------------------------------
     def tokenize_fn(example):
         text = build_text(example)
         tokens = tokenizer(
@@ -90,9 +74,6 @@ def preprocess_sft_dataset(
     return dataset
 
 
-##############################################################################
-# 2) The main SFT training function
-##############################################################################
 def train_sft(
     model_name_or_path: str,
     dataset_path: str,
@@ -105,8 +86,6 @@ def train_sft(
 ):
     """
     Train a language model via standard supervised fine-tuning (SFT).
-    This is similar in style to 'train_dpo', but it uses
-    cross-entropy on the 'chosen' data instead of DPO.
 
     Args:
         model_name_or_path: Hugging Face model name or local path
@@ -118,14 +97,8 @@ def train_sft(
         push_to_hub: Whether to push model to HF Hub
         hub_model_id: The Hub repo name if push_to_hub is True
     """
-    # ---------------------------------------------------------------------
-    # 2A. Create output dir
-    # ---------------------------------------------------------------------
     os.makedirs(output_dir, exist_ok=True)
 
-    # ---------------------------------------------------------------------
-    # 2B. Set default SFT config if none provided
-    # ---------------------------------------------------------------------
     if sft_config is None:
         sft_config = {}
     num_train_epochs = int(sft_config.get("num_train_epochs", 3))
@@ -142,10 +115,6 @@ def train_sft(
     eval_split = float(sft_config.get("eval_split", 0.1))
     dataset_num_proc = int(sft_config.get("dataset_num_proc", 4))
 
-    # ---------------------------------------------------------------------
-    # 2C. Load model and tokenizer
-    # ---------------------------------------------------------------------
-
     model, tokenizer = load_model_and_tokenizer(
         model_name_or_path=model_name_or_path,
         dpo_config=DPOConfig(
@@ -155,9 +124,6 @@ def train_sft(
         lora_config=lora_config,
     )
 
-    # ---------------------------------------------------------------------
-    # 2D. Load & preprocess dataset (only using 'chosen' for SFT)
-    # ---------------------------------------------------------------------
     dataset = preprocess_sft_dataset(
         dataset_path=dataset_path,
         tokenizer=tokenizer,
@@ -165,9 +131,6 @@ def train_sft(
         num_proc=dataset_num_proc,
     )
 
-    # ---------------------------------------------------------------------
-    # 2E. Create train & eval splits if needed
-    # ---------------------------------------------------------------------
     if "train" not in dataset and "test" not in dataset:
         dataset = dataset.train_test_split(test_size=eval_split)
         train_dataset = dataset["train"]
@@ -177,9 +140,6 @@ def train_sft(
         train_dataset = dataset.get("train", dataset)
         eval_dataset = dataset.get("test", None)
 
-    # ---------------------------------------------------------------------
-    # 2F. Set up HF TrainingArguments for SFT
-    # ---------------------------------------------------------------------
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=num_train_epochs,
@@ -198,17 +158,11 @@ def train_sft(
         hub_token=settings.HF_KEY if push_to_hub else None,
     )
 
-    # ---------------------------------------------------------------------
-    # 2G. Create a data collator for causal language modeling
-    # ---------------------------------------------------------------------
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,  # We don't want masked language modeling
     )
 
-    # ---------------------------------------------------------------------
-    # 2H. Create a standard Trainer for SFT
-    # ---------------------------------------------------------------------
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -217,22 +171,13 @@ def train_sft(
         data_collator=data_collator,
     )
 
-    # ---------------------------------------------------------------------
-    # 2I. Train!
-    # ---------------------------------------------------------------------
     train_result = trainer.train()
 
-    # ---------------------------------------------------------------------
-    # 2J. Save the final model & metrics
-    # ---------------------------------------------------------------------
     trainer.save_model(output_dir)
     metrics = train_result.metrics
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
 
-    # ---------------------------------------------------------------------
-    # 2K. Generate any visualizations if you want to reuse your existing code
-    # ---------------------------------------------------------------------
     log_dir = os.path.join(output_dir, "runs")  # HF Trainer logs go in /runs by default
     viz_dir = os.path.join(output_dir, "visualizations")
 
@@ -243,9 +188,6 @@ def train_sft(
     except Exception as e:
         print(f"Warning: Could not generate visualizations: {e}")
 
-    # ---------------------------------------------------------------------
-    # 2L. Optionally push to hub
-    # ---------------------------------------------------------------------
     if push_to_hub and hub_model_id:
         trainer.push_to_hub()
         print(

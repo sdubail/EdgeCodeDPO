@@ -411,7 +411,7 @@ def version() -> None:
     )
 
 
-# Register the training commands
+# register the training commands
 register_training_commands(app)
 
 

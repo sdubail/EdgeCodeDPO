@@ -41,12 +41,12 @@ async def process_combination(
     Returns:
         A dictionary with the results of both stages
     """
-    # Create the first stage prompt
+    # first stage prompt
     first_stage_prompt = create_first_stage_prompt(
         combination, is_test=is_test, is_header=is_header
     )
 
-    # Call the OpenAI API for the first stage
+    # call the OpenAI API for the first stage
     messages = []
     if system_message:
         messages.append({"role": "system", "content": system_message})
@@ -60,19 +60,19 @@ async def process_combination(
         messages=messages, json_mode=True, temperature=0.7
     )
 
-    # Extract the content from the response
+    # extraction
     first_content = first_stage_response["choices"][0]["message"]["content"]
 
     try:
-        # Parse the JSON response
+        # parsing
         first_parsed = json.loads(first_content)
 
-        # Create the second stage prompt
+        # create the second stage prompt
         second_stage_prompt = create_second_stage_prompt(
             first_parsed, combination, is_test=is_test, is_header=is_header
         )
 
-        # Call the OpenAI API for the second stage
+        # call API for the second stage
         messages = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
@@ -85,16 +85,13 @@ async def process_combination(
         second_stage_response = await client.chat_completion(
             messages=messages,
             json_mode=True,
-            temperature=0.5,  # Lower temperature for more consistent code quality
+            temperature=0.5,  # lower temperature for more consistent code quality
         )
 
-        # Extract the content from the response
         second_content = second_stage_response["choices"][0]["message"]["content"]
 
-        # Parse the JSON response
         second_parsed = json.loads(second_content)
 
-        # Return both stages' results
         return {
             "combination": combination,
             "first_stage": {
@@ -205,7 +202,7 @@ def convert_to_dataset_format(
             print(f"Skipping result with error: {result['error']}")
             continue
 
-        # Extract combination metadata
+        # extract combination metadata
         combination = result["combination"]
         domain = combination["domain"]
         task = combination["task"]
@@ -230,9 +227,8 @@ def convert_to_dataset_format(
         first_examples = first_stage["parsed_response"].get(original_main_key, [])
         second_examples = second_stage["parsed_response"].get(improved_main_key, [])
 
-        # Process examples to create prompt-chosen-rejected format
+        # process examples to create prompt-chosen-rejected format
         for example in second_examples:
-            # Find corresponding first-stage example to get the prompt
             original_code = example.get(original_key, "")
             corresponding_prompt = ""
 
@@ -245,19 +241,19 @@ def convert_to_dataset_format(
                 print("Warning: Could not find matching prompt for example. Skipping.")
                 continue
 
-            # Format the data in the expected conversational format
+            # format the data in the expected conversational format
             prompt_message = [{"role": "user", "content": corresponding_prompt}]
             chosen_message = [
                 {"role": "assistant", "content": example.get(improved_key, "")}
             ]
             rejected_message = [{"role": "assistant", "content": original_code}]
 
-            # Add to dataset
+            # add to dataset
             dataset_dict["prompt"].append(prompt_message)
             dataset_dict["chosen"].append(chosen_message)
             dataset_dict["rejected"].append(rejected_message)
 
-            # Add metadata for each example
+            # add metadata for each example
             dataset_dict["domain"].append(domain)
             dataset_dict["task"].append(task)
             dataset_dict["code_form"].append(str(code_form))
@@ -293,20 +289,19 @@ def convert_to_test_dataset_format(
             print(f"Skipping result with error: {result['error']}")
             continue
 
-        # Extract combination metadata
         combination = result["combination"]
         domain = combination["domain"]
         task = combination["task"]
-        code_form = combination["code_form"][0]  # Just one code form per task
+        code_form = combination["code_form"][0]  # just one code form /task
 
         second_stage = result["second_stage"]
         processed_response = second_stage["parsed_response"]
 
-        # Get the improved and original code
+        # get improved and orig
         improved_code = processed_response.get("improved_code", "")
         original_code = processed_response.get("original_code", "")
 
-        # For each prompt type, create a separate dataset entry
+        # for each prompt type create a separate dataset entry
         prompt_types = [
             ("prompt_default", "default"),
             ("prompt_code_form", "code_form"),
@@ -318,17 +313,14 @@ def convert_to_test_dataset_format(
             if not prompt_text:
                 continue
 
-            # Format the data in the expected conversational format
             prompt_message = [{"role": "user", "content": prompt_text}]
             chosen_message = [{"role": "assistant", "content": improved_code}]
             rejected_message = [{"role": "assistant", "content": original_code}]
 
-            # Add to dataset
             dataset_dict["prompt"].append(prompt_message)
             dataset_dict["chosen"].append(chosen_message)
             dataset_dict["rejected"].append(rejected_message)
 
-            # Add metadata
             dataset_dict["domain"].append(domain)
             dataset_dict["task"].append(task)
             dataset_dict["code_form"].append(code_form)
@@ -365,15 +357,12 @@ async def generate_dataset(
     if is_test:
         output_path += "_test"
 
-    # Load the configuration
     with open(config_file) as file:
         config = yaml.safe_load(file)
 
-    # Extract the configuration and generate combinations
     combinations = generate_combinations(config)
     print(f"Generated {len(combinations)} total combinations")
 
-    # Sample combinations if requested
     if num_samples and num_samples < len(combinations):
         import random
 
@@ -382,10 +371,9 @@ async def generate_dataset(
     else:
         sampled_combinations = combinations
 
-    # Initialize the OpenAI client
     client = OpenAIAsyncClient(model=openai_model, api_key=settings.OPENAI_KEY)
 
-    # Process all combinations
+    # process all combinations
     results = await process_batch(
         client=client,
         combinations=sampled_combinations,
@@ -395,7 +383,6 @@ async def generate_dataset(
         is_header=is_header,
     )
 
-    # Save intermediate results if requested
     if save_intermediate:
         intermediate_path = os.path.join(output_path, "intermediate_results.json")
         os.makedirs(output_path, exist_ok=True)
@@ -405,21 +392,19 @@ async def generate_dataset(
             # results = json.load(f)
         print(f"Saved intermediate results to {intermediate_path}")
 
-    # Convert to dataset format
     if not is_test:
         dataset_dict = convert_to_dataset_format(results, is_header=is_header)
     else:
         dataset_dict = convert_to_test_dataset_format(results)
 
-    # Create and save the HuggingFace dataset
     dataset = Dataset.from_dict(dataset_dict)
 
-    # Save the dataset
+    # aave the dataset
     dataset_path = os.path.join(output_path, "dataset")
     dataset.save_to_disk(dataset_path)
     print(f"Saved HuggingFace dataset to {dataset_path}")
 
-    # Print some statistics
+    # some statistics
     print("Dataset statistics:")
     print(f"  - Rejected examples: {len(dataset_dict['rejected'])}")
     print(f"  - Chosen examples: {len(dataset_dict['chosen'])}")
@@ -452,7 +437,6 @@ async def upload_to_huggingface(
 
     from edgecodedpo.config import settings
 
-    # Use the token from settings if not provided
     token = hf_token or settings.HF_KEY
     if not token:
         raise ValueError(
@@ -461,24 +445,19 @@ async def upload_to_huggingface(
 
     final_dataset = None
 
-    # Check if we should fuse datasets
     if fuse_datasets:
-        # Find all dataset directories matching the pattern
         base_dir = os.path.dirname(os.path.dirname(dataset_path))
-        # Only match directories with numeric suffixes (gen_data_1, gen_data_2, etc.)
         pattern = os.path.join(base_dir, "gen_data_[0-9]*/dataset")
 
-        # Find all matching dataset directories
         dataset_paths = glob.glob(pattern)
 
-        # Sort paths to ensure consistent ordering (sorting by numeric suffix)
         dataset_paths.sort(
             key=lambda path: int(path.split("gen_data_")[1].split("/")[0])
         )
 
         print(f"Found {len(dataset_paths)} datasets to fuse")
         if dataset_paths:
-            # Load and concatenate all datasets
+            # load and concatenate all datasets
             datasets = []
             for path in dataset_paths:
                 print(f"Loading dataset from {path}")
@@ -490,12 +469,12 @@ async def upload_to_huggingface(
                     print(f"  - Error loading dataset: {e}")
 
             if datasets:
-                # Combine the datasets
+                # combine the datasets
                 print("Combining datasets...")
                 combined_dataset = concatenate_datasets(datasets)
                 print(f"Combined dataset has {len(combined_dataset)} examples")
 
-                # Save the combined dataset
+                # save the combined dataset
                 fused_path = os.path.join(base_dir, "fused_data/dataset")
                 os.makedirs(os.path.dirname(fused_path), exist_ok=True)
                 combined_dataset.save_to_disk(fused_path)
@@ -507,24 +486,19 @@ async def upload_to_huggingface(
         else:
             print("No datasets found for fusion")
 
-    # If no fusion occurred or fusion failed, use the original dataset
     if final_dataset is None:
         final_dataset = load_from_disk(dataset_path)
 
-    # Login to HuggingFace
     login(token=token)
 
-    # Upload the dataset to HuggingFace Hub
     final_dataset.push_to_hub(
         repo_id=repo_id,
         private=private,
         token=token,
     )
 
-    # Get the API instance for additional operations
     api = HfApi(token=token)
 
-    # Add relevant metadata to the repository
     api.upload_file(
         path_or_fileobj=b'{"tags": ["code", "dpo", "edge-code-dpo"]}',
         path_in_repo=".tags",
@@ -557,15 +531,12 @@ async def generate_dataset_statistics(
     Returns:
         Dictionary containing the statistics
     """
-    # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
-    # Load dataset
     print(f"Loading dataset from {dataset_path}...")
     if os.path.exists(dataset_path):
         dataset = load_from_disk(dataset_path)
     else:
-        # Attempt to load from HuggingFace Hub
         try:
             if ":" in dataset_path:
                 repo_id, split = dataset_path.split(":", 1)
@@ -577,33 +548,29 @@ async def generate_dataset_statistics(
         except Exception as e:
             raise ValueError(f"Failed to load dataset: {e}")
 
-    # Load tokenizer
     print(f"Loading tokenizer {tokenizer_name_or_path}...")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
 
-    # Set device
     device = torch.device("cuda" if torch.cuda.is_available() and use_gpu else "cpu")
     print(f"Using device: {device}")
 
-    # Prepare to collect token lengths
     prompt_lengths = []
     chosen_lengths = []
     rejected_lengths = []
 
-    # Process dataset in batches
+    # process dataset in batches
     for i in tqdm(range(0, len(dataset), batch_size), desc="Processing dataset"):
         batch = dataset[i : i + batch_size]
 
         # Process prompts
         prompt_batch = []
         for prompt in batch["prompt"]:
-            # Extract prompt content from conversation format
             if (
                 isinstance(prompt, list)
                 and len(prompt) > 0
                 and isinstance(prompt[0], dict)
             ):
-                # Assumes format like [{"role": "user", "content": "..."}]
+                # assumes format like [{"role": "user", "content": "..."}]
                 prompt_text = prompt[0].get("content", "")
             else:
                 prompt_text = str(prompt)
@@ -614,7 +581,7 @@ async def generate_dataset_statistics(
             [sum(mask) for mask in prompt_tokens.attention_mask.tolist()]
         )
 
-        # Process chosen completions
+        # process chosen completions
         chosen_batch = []
         for chosen in batch["chosen"]:
             if (
@@ -632,7 +599,7 @@ async def generate_dataset_statistics(
             [sum(mask) for mask in chosen_tokens.attention_mask.tolist()]
         )
 
-        # Process rejected completions
+        # process rejected completions
         rejected_batch = []
         for rejected in batch["rejected"]:
             if (
@@ -650,7 +617,6 @@ async def generate_dataset_statistics(
             [sum(mask) for mask in rejected_tokens.attention_mask.tolist()]
         )
 
-    # Calculate statistics
     stats = {
         "dataset_info": {
             "path": dataset_path,
@@ -662,13 +628,11 @@ async def generate_dataset_statistics(
         "rejected": calculate_stats(rejected_lengths),
     }
 
-    # Save statistics to JSON
     stats_path = os.path.join(output_dir, "token_length_stats.json")
     with open(stats_path, "w") as f:
         json.dump(stats, f, indent=2)
     print(f"Statistics saved to {stats_path}")
 
-    # Generate and save figures
     generate_figures(prompt_lengths, chosen_lengths, rejected_lengths, output_dir)
 
     return stats
@@ -698,10 +662,8 @@ def generate_figures(
     output_dir: str,
 ) -> None:
     """Generate and save figures showing token length distributions."""
-    # Create a figure with 3 subplots
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 15))
 
-    # Plot histograms
     bins = np.linspace(
         0, max(max(prompt_lengths), max(chosen_lengths), max(rejected_lengths)) + 50, 50
     )
@@ -735,15 +697,12 @@ def generate_figures(
 
     plt.tight_layout()
 
-    # Save the figure
     figure_path = os.path.join(output_dir, "token_length_distributions.png")
     plt.savefig(figure_path, dpi=300, bbox_inches="tight")
     print(f"Figure saved to {figure_path}")
 
-    # Generate combined density plot for comparison
     plt.figure(figsize=(10, 6))
 
-    # Plot kernel density estimates instead of histograms for clearer comparison
     plt.hist(
         prompt_lengths,
         bins=bins,

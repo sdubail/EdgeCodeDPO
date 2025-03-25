@@ -23,7 +23,7 @@ def generate_combinations(config: dict[str, Any]) -> list[dict[str, Any]]:
         tasks = domain_data.get("tasks", [])
 
         for task_entry in tasks:
-            # In the new structure, each task is a dictionary with 'name' and 'code_forms'
+            # in the new structure each task is a dictionary with 'name' and 'code_forms'
             task_name = task_entry.get("name", "")
             code_forms = task_entry.get("code_forms", [])
 
@@ -150,10 +150,8 @@ def create_second_stage_prompt(
 
     if not is_test:
         if not is_header:
-            # Extract the examples from the first response
             examples = first_response.get("examples", [])
 
-            # Create a JSON-ready array of the original code examples
             code_examples_json = json.dumps(
                 [{"use_case": ex["use_case"], "code": ex["code"]} for ex in examples],
                 indent=2,
@@ -187,10 +185,8 @@ Please respond with a valid JSON object with the following structure:
 
 Make sure your improved code demonstrates Python expertise while maintaining the exact functionality of the original code. Focus on adding types, documentation, and improving code quality without changing the core logic or functionality."""
         else:
-            # Extract the headers from the first response
             headers = first_response.get("headers", [])
 
-            # Create a JSON-ready array of the original headers
             headers_json = json.dumps(
                 [
                     {"use_case": ex["use_case"], "header": ex["header"]}
@@ -230,11 +226,9 @@ Make sure your improved headers demonstrate Python expertise with excellent type
 
     else:
         if not is_header:
-            # Extract the example from the first response
             use_case = first_response.get("use_case", "")
             code = first_response.get("code", "")
 
-            # Create a JSON-ready representation of the original code example
             code_example_json = json.dumps(
                 {"use_case": use_case, "code": code}, indent=2
             )
@@ -297,106 +291,3 @@ def save_prompts_to_file(
             json_line = json.dumps(prompt_data, ensure_ascii=False)
             f.write(json_line + "\n")
     print(f"{len(prompts)} prompts saved to {filename}")
-
-
-def generate_first_stage_prompts(
-    config: dict[str, Any],
-    num_samples: int | None = None,
-    output_file: str | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """
-    Generates first-stage prompts from the configuration.
-
-    Args:
-        config: the configuration dictionary
-        num_samples: Number of prompts to generate (randomly)
-        output_file: Output file to save the prompts
-
-    Returns:
-        tuple: (config, combinations, prompts)
-            - combinations: List of all possible combinations
-            - prompts: List of dictionaries {combination, prompt_text}
-    """
-    if not config:
-        return [], []
-
-    # Generate all possible combinations
-    combinations = generate_combinations(config)
-    print(f"Generated {len(combinations)} total combinations")
-
-    # Select the combinations to use
-    selected_combinations = combinations
-    if num_samples and num_samples < len(combinations):
-        selected_combinations = random.sample(combinations, num_samples)
-        print(f"Selected {num_samples} random combinations")
-
-    # Generate prompts for the selected combinations
-    prompts = []
-    for combo in selected_combinations:
-        prompt_text = create_first_stage_prompt(combo)
-        prompts.append({"combination": combo, "prompt_text": prompt_text})
-
-    # Save the prompts if an output file is specified
-    if output_file and prompts:
-        save_prompts_to_file(prompts, output_file)
-
-    return combinations, prompts
-
-
-def format_conversation_pair(prompt: str, response: str) -> list[dict[str, str]]:
-    """
-    Format a prompt-response pair as a conversation for instructional fine-tuning.
-
-    Args:
-        prompt: The prompt text
-        response: The response text
-
-    Returns:
-        A list of message dictionaries in the format:
-        [{"role": "user", "content": prompt}, {"role": "assistant", "content": response}]
-    """
-    return [
-        {"role": "user", "content": prompt},
-        {"role": "assistant", "content": response},
-    ]
-
-
-if __name__ == "__main__":
-    # Example usage
-
-    config = yaml.safe_load(open("configs/dataset.yaml"))
-
-    combinations, prompts = generate_first_stage_prompts(config, num_samples=1)
-
-    if prompts:
-        example = prompts[0]
-        combo = example["combination"]
-        print("\nExample combination:")
-        print(f"Domain: {combo['domain']}")
-        print(f"Task: {combo['task']}")
-        print(f"Libraries: {', '.join(combo['libraries'])}")
-        print(f"Code form: {combo['code_form']}")
-
-        print("\nFirst stage prompt:")
-        print("-" * 50)
-        print(example["prompt_text"])
-        print("-" * 50)
-
-        # Example of a first-stage response for demonstration
-        example_response = {
-            "examples": [
-                {
-                    "use_case": "Cleaning customer transaction data with missing values",
-                    "code": "def clean_transactions(df):\n    df = df.dropna(subset=['transaction_id'])\n    df = df.fillna({'amount': 0, 'category': 'unknown'})\n    df = df.drop_duplicates(subset=['transaction_id'])\n    return df",
-                    "prompt": "Write a pandas function to clean transaction data by removing rows with missing IDs, filling missing amounts with 0, categorizing unknowns, and removing duplicates.",
-                }
-            ]
-        }
-
-        # Generate second stage prompt based on the example response
-        second_stage_prompt = create_second_stage_prompt(example_response, combo)
-
-        print("\nSecond stage prompt:")
-        print("-" * 50)
-        print(second_stage_prompt)
-        print("-" * 50)

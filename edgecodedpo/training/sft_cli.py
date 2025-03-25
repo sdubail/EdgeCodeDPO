@@ -70,7 +70,6 @@ def register_sft_commands(app: typer.Typer) -> None:
             "-c",
             help="Path to the training configuration file",
         ),
-        # Optional CLI overrides for common training hyperparams
         epochs: int | None = typer.Option(
             None,
             "--epochs",
@@ -103,26 +102,21 @@ def register_sft_commands(app: typer.Typer) -> None:
         """
         Train a model using Supervised Fine-Tuning (SFT).
         """
-        # 1) Load the training configuration
         config = load_training_config(config_file)
 
-        # 2) Resolve model name/path
         if model_name_or_path is None:
             model_name_or_path = get_config_value(
                 config, "model", "name", default="Qwen/Qwen2-0.5B-Instruct"
             )
 
-        # 3) Determine if we want quantization
         use_quantization = get_config_value(
             config, "optimization", "quantization", "enabled", default=False
         )
 
-        # 4) Determine if we want LoRA
         use_lora = get_config_value(
             config, "optimization", "lora", "enabled", default=False
         )
 
-        # 5) Pull / override training hyperparams
         num_epochs = (
             epochs
             if epochs is not None
@@ -141,7 +135,6 @@ def register_sft_commands(app: typer.Typer) -> None:
             )
         )
 
-        # 6) Push-to-hub overrides
         push_to_hub_enabled = (
             push_to_hub
             if push_to_hub is not None
@@ -153,7 +146,6 @@ def register_sft_commands(app: typer.Typer) -> None:
             else get_config_value(config, "hub", "hub_model_id", default=None)
         )
 
-        # 7) Print out config info (like your DPO command does)
         console.print(
             Panel.fit(
                 "🚀 [bold blue]EdgeCodeDPO SFT Training[/bold blue]",
@@ -175,7 +167,6 @@ def register_sft_commands(app: typer.Typer) -> None:
         if push_to_hub_enabled and hub_id:
             console.print(f"  Hub model ID: [cyan]{hub_id}[/cyan]")
 
-        # 8) Build an SFT config dict
         sft_config = {
             "num_train_epochs": num_epochs,
             "learning_rate": lr,
@@ -209,7 +200,6 @@ def register_sft_commands(app: typer.Typer) -> None:
             ),
         }
 
-        # 9) Build quantization config if enabled
         quantization_config = None
         if use_quantization:
             quantization_config = {
@@ -239,7 +229,6 @@ def register_sft_commands(app: typer.Typer) -> None:
                 ),
             }
 
-        # 10) Build LoRA config if enabled
         lora_config = None
         if use_lora:
             lora_r = get_config_value(config, "optimization", "lora", "r", default=16)
@@ -258,7 +247,6 @@ def register_sft_commands(app: typer.Typer) -> None:
                 ),
             }
 
-        # 11) Finally, call our SFT training
         try:
             train_sft(
                 model_name_or_path=model_name_or_path,
