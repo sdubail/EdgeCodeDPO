@@ -67,7 +67,7 @@ def calculate_type_annotation_coverage(
     """
     functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
     if not functions:
-        return None
+        return 0
 
     match metric_level:
         case 0:
@@ -117,7 +117,7 @@ def calculate_docstring_coverage(tree: ast.AST) -> float | None:
     """
     functions = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
     if not functions:
-        return None
+        return 0
 
     documented_functions = [fn for fn in functions if ast.get_docstring(fn)]
     return len(documented_functions) / len(functions)

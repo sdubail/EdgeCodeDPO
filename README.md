@@ -96,6 +96,13 @@ edgecodedpo generate --config edgecodedpo/configs/dataset.yaml --output data/gen
 edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-Instruct --output edgecodedpo/data/stats
 ```
 
+### Computing Dataset Evaluation Metrics
+
+```bash
+# Generate metrics on datasets
+edgecodedpo eval --dataset simondubail/edgecodedpo --split train --output edgecodedpo/data/eval_metrics --num-examples 10 --batch-size 5 
+```
+
 ### Uploading to HuggingFace Hub
 
 ```bash
