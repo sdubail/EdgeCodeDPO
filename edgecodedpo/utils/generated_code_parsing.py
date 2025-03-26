@@ -16,7 +16,7 @@ def extract_code_blocks(text):
     Extracts Python code blocks from a given text using regex.
     If no code blocks are found, it checks if the entire text is valid Python code.
     """
-    code_blocks = re.findall(r'```(?:python)?\n(.*?)\n```', text, re.DOTALL)
+    code_blocks = re.findall(r"```(?:python)?\n(.*?)\n```", text, re.DOTALL)
     
     if code_blocks:  # If explicitly formatted code blocks exist
         return code_blocks
