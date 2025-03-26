@@ -107,6 +107,13 @@ edgecodedpo generate --test
 edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-Instruct --output edgecodedpo/data/stats
 ```
 
+### Computing Dataset Evaluation Metrics
+
+```bash
+# Generate metrics on datasets
+edgecodedpo eval --dataset simondubail/edgecodedpo --split train --output edgecodedpo/data/eval_metrics --num-examples 10 --batch-size 5 
+```
+
 ### Managing datasets on HuggingFace Hub
 
 ```bash

@@ -1,13 +1,29 @@
 import ast
 import re
 
+def is_valid_python(code):
+    """
+    Checks if the given code is valid Python by attempting to parse it.
+    """
+    try:
+        ast.parse(code)
+        return True
+    except SyntaxError:
+        return False
 
 def extract_code_blocks(text):
     """
     Extracts Python code blocks from a given text using regex.
+    If no code blocks are found, it checks if the entire text is valid Python code.
     """
-    code_blocks = re.findall(r"```(?:python)?\n(.*?)\n```", text, re.DOTALL)
-    return code_blocks
+    code_blocks = re.findall(r'```(?:python)?\n(.*?)\n```', text, re.DOTALL)
+    
+    if code_blocks:  # If explicitly formatted code blocks exist
+        return code_blocks
+    elif is_valid_python(text.strip()):  # Check if the whole text is Python code
+        return [text.strip()]
+    else:  # If it's not valid Python code, return an empty list
+        return []
 
 
 def preprocess_code_blocks(code_blocks):

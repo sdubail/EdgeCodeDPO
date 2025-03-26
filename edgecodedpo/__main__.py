@@ -16,6 +16,8 @@ from edgecodedpo.data.dataset_generator import (
     generate_dataset_statistics,
     upload_to_huggingface,
 )
+from edgecodedpo.data.dataset_metrics import load_and_evaluate_dataset
+
 from edgecodedpo.training.integration import register_training_commands
 
 app = typer.Typer(
@@ -396,6 +398,87 @@ def stats(
             Panel.fit(
                 f"❌ [bold red]Error:[/bold red] {e}",
                 title="Statistics Generation Failed",
+                border_style="red",
+            )
+        )
+        console.print(Traceback())
+        raise typer.Exit(code=1)
+
+@app.command(name="eval", help="Generate metrics for a dataset")
+def stats(
+    dataset_path: str = typer.Option(
+        "simondubail/edgecodedpo",
+        "--dataset",
+        "-d",
+        help="Path to the dataset or HuggingFace dataset ID",
+    ),
+    num_examples: int = typer.Option(
+        10,
+        "--num-examples",
+        "-n",
+        help="Number of examples from dataset to be used for metric generation",
+    ),
+    dataset_split: str = typer.Option(
+        "train",
+        "--split",
+        "-s",
+        help="Split of the dataset to compute the metrics on",
+    ),
+    output: str = typer.Option(
+        "edgecodedpo/data/eval_metrics",
+        "--output",
+        "-o",
+        help="Path to save the metrics and figures",
+    ),
+    batch_size: int = typer.Option(
+        4,
+        "--batch-size",
+        "-b",
+        help="Batch size for processing",
+    ),
+) -> None:
+    """
+    Load a dataset and evaluate it by comparing chosen vs rejected code and subcategorizing the analysis.
+    """
+    console.print(
+        Panel.fit(
+            "📊 [bold blue]EdgeCodeDPO Dataset Eval Metrics[/bold blue]",
+            title="Starting",
+            border_style="green",
+        )
+    )
+
+    console.print("[bold]Configuration:[/bold]")
+    console.print(f"  Dataset path: [cyan]{dataset_path}[/cyan]")
+    console.print(f"  Output path: [cyan]{output}[/cyan]")
+    console.print(f"  Number of examples: [cyan]{num_examples}[/cyan]")
+    console.print(f"  Batch size: [cyan]{batch_size}[/cyan]")
+
+    # Create output directory if it doesn't exist
+    os.makedirs(output, exist_ok=True)
+
+    try:
+        # Run the statistics generator
+        load_and_evaluate_dataset(
+            dataset_path=dataset_path,
+            output_dir=output,
+            num_examples=num_examples,
+            dataset_split=dataset_split,
+            batch_size=batch_size,
+        )
+
+        console.print(
+            Panel.fit(
+                f"✅ [bold green]Dataset Eval Metrics generation completed successfully![/bold green]\n"
+                f"Eval Metrics saved to {output}/dataset_eval_results.json",
+                border_style="green",
+            )
+        )
+    except Exception as e:
+        console.print(
+            Panel.fit(
+                f"❌ [bold red]Error:[/bold red] {e}",
+                title="Dataset Eval Metrics Generation Failed",
                 border_style="red",
             )
         )

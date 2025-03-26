@@ -373,7 +373,7 @@ def load_and_evaluate_model(
     results = []
     fails = []
     # Process dataset in batches
-    for batch_start in tqdm(range(0, len(eval_dataset), batch_size)):
+    for batch_start in tqdm(range(0, min(num_examples, len(eval_dataset)), batch_size)):
         batch_end = min(batch_start + batch_size, len(eval_dataset))
         batch = eval_dataset[batch_start:batch_end]
 
