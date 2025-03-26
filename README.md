@@ -103,18 +103,17 @@ edgecodedpo stats --dataset simondubail/edgecodedpo --tokenizer Qwen/Qwen2-0.5B-
 edgecodedpo eval --dataset simondubail/edgecodedpo --split train --output edgecodedpo/data/eval_metrics --num-examples 10 --batch-size 5 
 ```
 
-### Uploading to HuggingFace Hub
+### Managing datasets on HuggingFace Hub
 
 ```bash
 # Upload a dataset to HuggingFace Hub
 edgecodedpo upload --dataset-path edgecodedpo/data/gen_data/dataset --repo-id yourusername/edgecodedpo
-```
 
-### Downloading Dataset from HuggingFace Hub
-
-```bash
 # Download a dataset from HuggingFace Hub
 edgecodedpo download --dataset-path edgecodedpo/data/repo_data/dataset --repo-id yourusername/edgecodedpo
+
+# Fuse multiple datasets before uploading
+edgecodedpo upload --fuse --repo-id yourusername/edgecodedpo-combined
 ```
 
 ### Training with DPO
